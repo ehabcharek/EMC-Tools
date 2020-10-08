@@ -3053,6 +3053,7 @@ class addCone(bpy.types.Operator):
         # bpy.ops.transform.translate(value=(0, 0, -(self.depth/2)), orient_type='LOCAL')
         bpy.context.object.name = "Cone Taper Origin"
         t_origin = bpy.context.selected_objects[0]
+        t_origin.parent = og
         move_to_col(t_origin, 'EMC Extras', True, True)
         bpy.ops.object.select_all(action='DESELECT')
         og.select_set(True)
