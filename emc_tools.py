@@ -3479,6 +3479,9 @@ class EmcBevelModal(bpy.types.Operator):
     edit: bpy.props.BoolProperty()
     wires: bpy.props.BoolProperty()
     vert_select: bpy.props.BoolProperty()
+    mod_loc: bpy.props.IntProperty()
+    mods_with_bevel: bpy.props.IntProperty()
+    og_mods_num: bpy.props.IntProperty()
 
     def modal(self, context, event):
 
@@ -3519,69 +3522,69 @@ class EmcBevelModal(bpy.types.Operator):
             width = (self.temp_offs + (delta - self.current_mouse_x)) * -0.005
             if event.ctrl:
                 
-                bpy.context.object.modifiers[-1].profile = profile
+                bpy.context.object.modifiers[self.mod_loc].profile = profile
                 # print(self.temp_prof + (delta - self.current_mouse_x) -500)
             elif event.shift:
                 try:
                     
-                    bpy.context.object.modifiers[-1].angle_limit = angle
+                    bpy.context.object.modifiers[self.mod_loc].angle_limit = angle
                     # print(self.temp_prof + (delta - self.current_mouse_x))
                 except:
                     pass
             else:
                 if self.init == True:
-                    bpy.context.object.modifiers[-1].profile = 0.5
-                    bpy.context.object.modifiers[-1].angle_limit = 0.523599
+                    bpy.context.object.modifiers[self.mod_loc].profile = 0.5
+                    bpy.context.object.modifiers[self.mod_loc].angle_limit = 0.523599
                     self.init = False
                     
-                bpy.context.object.modifiers[-1].width = width
+                bpy.context.object.modifiers[self.mod_loc].width = width
                 # print(self.temp_offs + (delta - self.current_mouse_x))
             
         
         elif event.type == 'WHEELUPMOUSE':
-            bpy.context.object.modifiers[-1].segments += 1
+            bpy.context.object.modifiers[self.mod_loc].segments += 1
             
         elif event.type == 'WHEELDOWNMOUSE':
-            bpy.context.object.modifiers[-1].segments -= 1
+            bpy.context.object.modifiers[self.mod_loc].segments -= 1
             
         elif event.type == 'A':
-            bpy.context.object.modifiers[-1].limit_method = 'ANGLE'
+            bpy.context.object.modifiers[self.mod_loc].limit_method = 'ANGLE'
             
         elif event.type == 'N':
-            bpy.context.object.modifiers[-1].limit_method = 'NONE'
+            bpy.context.object.modifiers[self.mod_loc].limit_method = 'NONE'
         
         elif event.type == 'W':
-            bpy.context.object.modifiers[-1].limit_method = 'WEIGHT'
+            bpy.context.object.modifiers[self.mod_loc].limit_method = 'WEIGHT'
             
         elif event.type == 'V':
-            bpy.context.object.modifiers[-1].limit_method = 'VGROUP'
+            bpy.context.object.modifiers[self.mod_loc].limit_method = 'VGROUP'
 
         elif event.type == 'X':
             if event.value == 'PRESS':
                 try:
-                    bpy.context.object.modifiers[-1].use_only_vertices = not bpy.context.object.modifiers[-1].use_only_vertices
+                    bpy.context.object.modifiers[self.mod_loc].use_only_vertices = not bpy.context.object.modifiers[self.mod_loc].use_only_vertices
                 except:
-                    if bpy.context.object.modifiers[-1].affect == 'EDGES':
-                        bpy.context.object.modifiers[-1].affect = 'VERTICES'
+                    if bpy.context.object.modifiers[self.mod_loc].affect == 'EDGES':
+                        bpy.context.object.modifiers[self.mod_loc].affect = 'VERTICES'
                     else:
-                        bpy.context.object.modifiers[-1].affect = 'EDGES'
+                        bpy.context.object.modifiers[self.mod_loc].affect = 'EDGES'
             
         elif event.type == 'C':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].use_clamp_overlap = not bpy.context.object.modifiers[-1].use_clamp_overlap
+                bpy.context.object.modifiers[self.mod_loc].use_clamp_overlap = not bpy.context.object.modifiers[self.mod_loc].use_clamp_overlap
         
         elif event.type == 'S':
             if event.value == 'PRESS':
-                if bpy.context.object.modifiers[-1].miter_outer == 'MITER_SHARP':
-                    bpy.context.object.modifiers[-1].miter_outer = 'MITER_PATCH'
-                elif bpy.context.object.modifiers[-1].miter_outer == 'MITER_PATCH':
-                    bpy.context.object.modifiers[-1].miter_outer = 'MITER_ARC'
+                if bpy.context.object.modifiers[self.mod_loc].miter_outer == 'MITER_SHARP':
+                    bpy.context.object.modifiers[self.mod_loc].miter_outer = 'MITER_PATCH'
+                elif bpy.context.object.modifiers[self.mod_loc].miter_outer == 'MITER_PATCH':
+                    bpy.context.object.modifiers[self.mod_loc].miter_outer = 'MITER_ARC'
                 else:
-                    bpy.context.object.modifiers[-1].miter_outer = 'MITER_SHARP'
+                    bpy.context.object.modifiers[self.mod_loc].miter_outer = 'MITER_SHARP'
 
         elif event.type == 'H':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].harden_normals = not bpy.context.object.modifiers[-1].harden_normals
+                bpy.context.object.modifiers[self.mod_loc].harden_normals = not bpy.context.object.modifiers[self.mod_loc].harden_normals
 
         elif event.type == 'Q':
             if event.value == 'PRESS':
@@ -3589,7 +3592,7 @@ class EmcBevelModal(bpy.types.Operator):
 
         elif event.type == 'L':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].loop_slide = not bpy.context.object.modifiers[-1].loop_slide
+                bpy.context.object.modifiers[self.mod_loc].loop_slide = not bpy.context.object.modifiers[self.mod_loc].loop_slide
 
 
         elif event.type in {'MIDDLEMOUSE'}:
@@ -3604,25 +3607,33 @@ class EmcBevelModal(bpy.types.Operator):
             return {'FINISHED'}
 
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
-            bpy.context.object.modifiers[-1].width = self.offset
-            bpy.context.object.modifiers[-1].segments = self.segments
-            bpy.context.object.modifiers[-1].profile = self.profile
-            bpy.context.object.modifiers[-1].angle_limit = self.temp_angl
-            bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+            bpy.context.object.modifiers[self.mod_loc].width = self.offset
+            bpy.context.object.modifiers[self.mod_loc].segments = self.segments
+            bpy.context.object.modifiers[self.mod_loc].profile = self.profile
+            bpy.context.object.modifiers[self.mod_loc].angle_limit = self.temp_angl                
             if self.edit == True:
-                bpy.ops.object.vertex_group_remove(all=False, all_unlocked=False)
-                bpy.ops.object.mode_set(mode='EDIT')
+                if self.vert_select:
+                    bpy.ops.object.vertex_group_remove(all=False, all_unlocked=False)
+                    bpy.ops.object.mode_set(mode='EDIT')
+                    bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+                else:
+                    bpy.ops.object.mode_set(mode='EDIT')
+                    bpy.ops.ed.undo()
+                    if self.og_mods_num != len(bpy.context.object.modifiers):
+                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+            else:
+                bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
             context.area.header_text_set(None)
             bpy.types.WorkSpace.status_text_set_internal(None)
             bpy.context.object.show_wire = self.wires
             return {'CANCELLED'}
         try:
             context.area.header_text_set(
-                "Offset: " + str(round(bpy.context.object.modifiers[-1].width, 2)) + " | " + 
-                "Segments: " + str(bpy.context.object.modifiers[-1].segments) + " | " + 
-                "Profile: "  + str(round(bpy.context.object.modifiers[-1].profile, 3)) + " | " + 
-                "Angle: " + str(round(bpy.context.object.modifiers[-1].angle_limit*180/math.pi, 1)) + " | " + 
-                "Loop Slide: " + str(bpy.context.object.modifiers[-1].loop_slide)
+                "Offset: " + str(round(bpy.context.object.modifiers[self.mod_loc].width, 2)) + " | " + 
+                "Segments: " + str(bpy.context.object.modifiers[self.mod_loc].segments) + " | " + 
+                "Profile: "  + str(round(bpy.context.object.modifiers[self.mod_loc].profile, 3)) + " | " + 
+                "Angle: " + str(round(bpy.context.object.modifiers[self.mod_loc].angle_limit*180/math.pi, 1)) + " | " + 
+                "Loop Slide: " + str(bpy.context.object.modifiers[self.mod_loc].loop_slide)
             )
             bpy.types.WorkSpace.status_text_set_internal("MMB Scroll: Segments | Ctrl: Profile | Shift: Angle | C: Clamp | N/A/W/V: Limit Method | X: Only Vertices | S: Outer Miter | H: Harden Normals | Q: Toggle Wireframe | L: Loop Slide")
         except:
@@ -3634,8 +3645,11 @@ class EmcBevelModal(bpy.types.Operator):
         self.current_mouse_x = 0
         self.init = True
         self.wires = bpy.context.object.show_wire
+        self.og_mods_num = len(bpy.context.object.modifiers)
         self.vert_select = True if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False) else False
-        mods_with_bevel = 0
+        self.mod_loc = -1
+        self.mods_with_bevel = 0
+        mod_temp_loc = 0
 
         bpy.context.object.data.use_auto_smooth = True
         bpy.context.object.show_wire = True
@@ -3643,44 +3657,50 @@ class EmcBevelModal(bpy.types.Operator):
         if bpy.context.object.mode == 'EDIT':
             bm = bmesh.from_edit_mesh(context.edit_object.data)
             selected_verts = [vertex for vertex in bm.verts if vertex.select]
+            bpy.ops.object.modifier_add(type='BEVEL')
+            bpy.context.object.modifiers[-1].harden_normals = True
+            bpy.context.object.modifiers[-1].miter_outer = 'MITER_ARC'
             if len(selected_verts) > 0:
-                bpy.ops.object.modifier_add(type='BEVEL')
-                bpy.context.object.modifiers[-1].harden_normals = True
-                bpy.context.object.modifiers[-1].miter_outer = 'MITER_ARC'
                 if self.vert_select:
                     bpy.ops.object.vertex_group_add()
                     bpy.context.scene.tool_settings.vertex_group_weight = 1
                     bpy.ops.object.vertex_group_assign()
                     bpy.context.object.vertex_groups[-1].name = 'EMC Bevel'
-                    bpy.context.object.modifiers[-1].vertex_group = bpy.context.object.vertex_groups[-1].name
+                    bpy.context.object.modifiers[-1].vertex_group = bpy.context.object.vertex_groups[self.mod_loc].name
                     bpy.context.object.modifiers[-1].limit_method = 'VGROUP'
                 else:
                     for modifier in bpy.context.object.modifiers:
+                        mod_temp_loc += 1
                         if modifier.type == 'BEVEL':
                             if modifier.limit_method == 'WEIGHT':
-                                mods_with_bevel += 1
-                    if mods_with_bevel > 0:
-                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+                                self.mods_with_bevel += 1
+                                self.mod_loc = mod_temp_loc - len(bpy.context.object.modifiers)
+                    print(self.mod_loc)
                     bpy.ops.transform.edge_bevelweight(value=1)
                     bpy.context.object.modifiers[-1].limit_method = 'WEIGHT'
+                    if self.mods_with_bevel > 0:
+                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
                 bpy.ops.object.mode_set(mode='OBJECT')
                 self.edit = True
         elif bpy.context.object.mode == 'OBJECT':
             bpy.ops.object.modifier_add(type='BEVEL')
-            bpy.context.object.modifiers[-1].harden_normals = True
-            bpy.context.object.modifiers[-1].miter_outer = 'MITER_ARC'
-            bpy.context.object.modifiers[-1].limit_method = 'ANGLE'
+            bpy.context.object.modifiers[self.mod_loc].harden_normals = True
+            bpy.context.object.modifiers[self.mod_loc].miter_outer = 'MITER_ARC'
+            bpy.context.object.modifiers[self.mod_loc].limit_method = 'ANGLE'
             self.edit = False
 
         try:
             bpy.data.window_managers["WinMan"].ml_active_object_modifier_active_index = -1
         except:
             pass  
-
-        self.offset = bpy.context.object.modifiers[-1].width
-        self.segments = bpy.context.object.modifiers[-1].segments
-        self.profile = bpy.context.object.modifiers[-1].profile
-        self.temp_angl = bpy.context.object.modifiers[-1].angle_limit
+        
+        try:
+            self.offset = bpy.context.object.modifiers[self.mod_loc].width
+            self.segments = bpy.context.object.modifiers[self.mod_loc].segments
+            self.profile = bpy.context.object.modifiers[self.mod_loc].profile
+            self.temp_angl = bpy.context.object.modifiers[self.mod_loc].angle_limit
+        except:
+            pass
 
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
