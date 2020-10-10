@@ -19,7 +19,7 @@
 bl_info = {
     "name": "EMC Tools",
     "author": "Ehab Charek",
-    "version": (1, 2, 2),
+    "version": (1, 2, 3),
     "blender": (2, 83, 3),
     "location": "View3D",
     "category": "Pie Menu",
@@ -112,7 +112,7 @@ class VIEW3D_MT_customMenu(Menu):
 
         pie = layout.menu_pie()
 
-        pie.operator("emc.repeat", icon='CON_TRANSLIKE')
+        pie.operator("emc.repeat", icon='SCRIPTPLUGINS') #CON_TRANSLIKE
 
         if bpy.context.object.mode == 'EDIT':
             pie.operator("emc.hole", icon='CLIPUV_DEHLT')
@@ -123,6 +123,7 @@ class VIEW3D_MT_customMenu(Menu):
 
         elif bpy.context.object.mode == 'OBJECT':
             pie.operator("emc.cage", icon='FILE_3D')
+            pie.operator("emc.purge", icon='CANCEL')
         
 class VIEW3D_MT_EmcModifiers(Menu):
     bl_label = "EMC Modifiers Menu"
@@ -4964,6 +4965,46 @@ class PanelLines(bpy.types.Operator):
 
         return{'FINISHED'}
 
+class Purge(bpy.types.Operator):
+    """Purge selected data types"""
+    bl_label = "Purge"
+    bl_idname = "emc.purge"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    drivers: bpy.props.BoolProperty(
+        name = "Drivers", 
+        description = "Delete All drivers on selected object", 
+        default = False
+    )
+
+    face_maps: bpy.props.BoolProperty(
+        name = "Face Maps", 
+        description = "Delete All Face Maps on selected object", 
+        default = False
+    )
+
+    props: bpy.props.BoolProperty(
+        name = "Custom Properties", 
+        description = "Delete All Custom Properties on selected object (with the exception of cycles and _RNA_UI)", 
+        default = False
+    )
+
+    def execute(self, context):
+        for x in bpy.context.selected_objects:
+            if self.drivers:
+                delete_drivers()
+            if self.face_maps:
+                for i in x.face_maps:
+                    x.face_maps.active_index = 0
+                    bpy.ops.object.face_map_remove()
+            if self.props:
+                for i in x.keys():
+                    if i == '_RNA_UI' or i == 'cycles':
+                        pass
+                    else:
+                        del x[i]
+        return{'FINISHED'}
+
 
 class AddModifierCustom(bpy.types.Operator):
     """Add various modifiers with some custom default parameters set"""
@@ -5499,6 +5540,7 @@ classes = (
     MoveIsland,
     BuildCorner,
     PanelLines,
+    Purge,
 )
 
 addon_keymaps = []
