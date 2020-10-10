@@ -3478,6 +3478,7 @@ class EmcBevelModal(bpy.types.Operator):
     init: bpy.props.BoolProperty()
     edit: bpy.props.BoolProperty()
     wires: bpy.props.BoolProperty()
+    vert_select: bpy.props.BoolProperty()
 
     def modal(self, context, event):
 
@@ -3633,6 +3634,8 @@ class EmcBevelModal(bpy.types.Operator):
         self.current_mouse_x = 0
         self.init = True
         self.wires = bpy.context.object.show_wire
+        self.vert_select = True if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False) else False
+        mods_with_bevel = 0
 
         bpy.context.object.data.use_auto_smooth = True
         bpy.context.object.show_wire = True
@@ -3644,12 +3647,22 @@ class EmcBevelModal(bpy.types.Operator):
                 bpy.ops.object.modifier_add(type='BEVEL')
                 bpy.context.object.modifiers[-1].harden_normals = True
                 bpy.context.object.modifiers[-1].miter_outer = 'MITER_ARC'
-                bpy.ops.object.vertex_group_add()
-                bpy.context.scene.tool_settings.vertex_group_weight = 1
-                bpy.ops.object.vertex_group_assign()
-                bpy.context.object.vertex_groups[-1].name = 'EMC Bevel'
-                bpy.context.object.modifiers[-1].vertex_group = bpy.context.object.vertex_groups[-1].name
-                bpy.context.object.modifiers[-1].limit_method = 'VGROUP'
+                if self.vert_select:
+                    bpy.ops.object.vertex_group_add()
+                    bpy.context.scene.tool_settings.vertex_group_weight = 1
+                    bpy.ops.object.vertex_group_assign()
+                    bpy.context.object.vertex_groups[-1].name = 'EMC Bevel'
+                    bpy.context.object.modifiers[-1].vertex_group = bpy.context.object.vertex_groups[-1].name
+                    bpy.context.object.modifiers[-1].limit_method = 'VGROUP'
+                else:
+                    for modifier in bpy.context.object.modifiers:
+                        if modifier.type == 'BEVEL':
+                            if modifier.limit_method == 'WEIGHT':
+                                mods_with_bevel += 1
+                    if mods_with_bevel > 0:
+                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+                    bpy.ops.transform.edge_bevelweight(value=1)
+                    bpy.context.object.modifiers[-1].limit_method = 'WEIGHT'
                 bpy.ops.object.mode_set(mode='OBJECT')
                 self.edit = True
         elif bpy.context.object.mode == 'OBJECT':
