@@ -1365,7 +1365,7 @@ class MarkSharp(bpy.types.Operator):
         return{'FINISHED'}
 
 class FaceMapSharp(bpy.types.Operator):
-    """Mark Sharp Edges All Face Map Boarders"""
+    """Mark Sharp Edges on All Face Map Boarders"""
     bl_label = "Mark Sharp by Face Maps"
     bl_idname = "emc.facemapsharp"
     bl_options = {'REGISTER', 'UNDO'}
@@ -2349,7 +2349,12 @@ class EMCbool(bpy.types.Operator):
                     bpy.context.object.modifiers[-1].operation = 'DIFFERENCE'
                     bpy.ops.object.duplicate_move()
                     bpy.context.object.modifiers[-1].operation = 'INTERSECT'
+                    
                     bpy.context.active_object.parent = active
+                    bpy.ops.object.location_clear(clear_delta=False)
+                    bpy.ops.object.rotation_clear(clear_delta=False)
+                    bpy.ops.object.scale_clear(clear_delta=False)
+
                     if self.apply:
                         if int_version > 283:
                             bpy.ops.object.modifier_apply(modifier=bpy.context.object.modifiers[-1].name)
