@@ -5010,6 +5010,38 @@ class Purge(bpy.types.Operator):
                         del x[i]
         return{'FINISHED'}
 
+class CustomNormals(bpy.types.Operator):
+    """Add or Clear Custom Split Normals"""
+    bl_label = "Add/Clear Custom Split Normals"
+    bl_idname = "emc.customnormals"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    whattodo: bpy.props.EnumProperty(
+        name="Add/Clear",
+        items=(("clear", "Clear", "Clear custom split normals from selected object(s)"),
+               ("add", "Add", "Add custom split normals from selected object(s)")),
+        description="Add or Clear custom split normals",
+        default='clear'
+        )
+
+    def execute(self, context):
+        selected = bpy.context.selected_objects
+        active = bpy.context.active_object
+
+        for i in selected:
+            bpy.ops.object.select_all(action='DESELECT')
+            i.select_set(True)
+            bpy.context.view_layer.objects.active = i
+            if self.whattodo == "clear":
+                bpy.ops.mesh.customdata_custom_splitnormals_clear()
+            else:
+                bpy.ops.mesh.customdata_custom_splitnormals_add()
+
+        for i in selected:
+            i.select_set(True)
+        bpy.context.view_layer.objects.active = active
+        return{'FINISHED'}
+
 
 class AddModifierCustom(bpy.types.Operator):
     """Add various modifiers with some custom default parameters set"""
@@ -5131,9 +5163,9 @@ class Smoothing(Menu):
             else:
                 pie.operator("emc.autosmooth", depress=False, icon = "ALIASED")
 
-            pie.operator("mesh.customdata_custom_splitnormals_clear", icon = "REMOVE")
+            pie.operator("emc.customnormals", text="Clear Custom Split Normals", icon = "REMOVE").whattodo = 'clear'
 
-            pie.operator("mesh.customdata_custom_splitnormals_add", icon = "ADD")
+            pie.operator("emc.customnormals", text="Add Custom Split Normals", icon = "ADD").whattodo = 'add'
 
             pie = pie.row()
             pie.label(text='')
@@ -5546,6 +5578,7 @@ classes = (
     BuildCorner,
     PanelLines,
     Purge,
+    CustomNormals,
 )
 
 addon_keymaps = []
