@@ -1311,7 +1311,7 @@ class MarkSharp(bpy.types.Operator):
     bl_idname = "emc.anglesharp"
     bl_options = {'REGISTER', 'UNDO'}
 
-    angle: bpy.props.IntProperty(
+    angle: bpy.props.FloatProperty(
         name = "Angle", 
         description = "Maximum angle between face normals that will be considered as smooth (unused if custom split normals data are available))", 
         default = 30,
