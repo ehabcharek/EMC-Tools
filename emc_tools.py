@@ -1354,8 +1354,7 @@ class MarkSharp(bpy.types.Operator):
         bpy.ops.object.vertex_group_select()
         bpy.ops.object.vertex_group_remove(all=False, all_unlocked=False)
 
-        if self.smooth == True:
-            bpy.context.object.data.auto_smooth_angle = math.pi
+        bpy.context.object.data.auto_smooth_angle = math.pi if self.smooth == True else og_angle
             
         bpy.context.object.data.use_auto_smooth = self.smooth
 
