@@ -4014,6 +4014,7 @@ class EmcArrayModal(bpy.types.Operator):
         self.axis_name = 'X'
         self.og_mode = bpy.context.object.mode
         self.wires = bpy.context.object.show_wire
+        self.mod_index = -1
 
         bpy.ops.object.mode_set (mode = 'OBJECT')
 
@@ -4041,7 +4042,7 @@ class EmcArrayModal(bpy.types.Operator):
         except:
             pass 
         
-        self.mod_index = -1
+        
         self.count = bpy.context.object.modifiers[self.mod_index].count
         self.x_factor = bpy.context.object.modifiers[self.mod_index].relative_offset_displace[0]
         self.y_factor = bpy.context.object.modifiers[self.mod_index].relative_offset_displace[1]
