@@ -5042,6 +5042,21 @@ class CustomNormals(bpy.types.Operator):
         bpy.context.view_layer.objects.active = active
         return{'FINISHED'}
 
+class SelLinked(bpy.types.Operator):
+    """Select linked components/loops based on selection mode"""
+    bl_label = "Select Linked Plus"
+    bl_idname = "emc.sellink"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False):
+            bpy.ops.mesh.loop_multi_select(ring=False)
+        elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True):
+            bpy.ops.mesh.select_linked(delimit={'UV'})
+        else:
+            bpy.ops.mesh.select_linked(delimit={'NORMAL'})
+        return{'FINISHED'}
+
 
 class AddModifierCustom(bpy.types.Operator):
     """Add various modifiers with some custom default parameters set"""
@@ -5579,6 +5594,7 @@ classes = (
     PanelLines,
     Purge,
     CustomNormals,
+    SelLinked,
 )
 
 addon_keymaps = []
@@ -5619,6 +5635,9 @@ def register():
     kmi.properties.name="Mesh.EMC_MT_Edit"  
     addon_keymaps.append((km, kmi))
 
+    kmi = km.keymap_items.new("emc.sellink", "LEFTMOUSE", "DOUBLE_CLICK", shift=True) 
+    addon_keymaps.append((km, kmi))
+
 
     km = wm.keyconfigs.addon.keymaps.new(name="Object Mode")
 
@@ -5629,6 +5648,7 @@ def register():
     # kmi = km.keymap_items.new("wm.call_menu_pie", "B", "PRESS", ctrl=True, shift=True)
     # kmi.properties.name="Mesh.EMC_MT_BoolTul"
     # addon_keymaps.append((km, kmi))
+
 
     km = wm.keyconfigs.addon.keymaps.new(name = "3D View", space_type = "VIEW_3D")
 
@@ -5651,10 +5671,12 @@ def register():
     kmi.properties.name="Mesh.EMC_MT_Modifiers"  
     addon_keymaps.append((km, kmi))
 
+
     km = wm.keyconfigs.addon.keymaps.new(name = "Graph Editor", space_type = "GRAPH_EDITOR")
 
     kmi = km.keymap_items.new("emc.keyframedel", "X", "PRESS", ctrl=True) 
     addon_keymaps.append((km, kmi))
+
 
     km = wm.keyconfigs.addon.keymaps.new(name="UV Editor")
 
