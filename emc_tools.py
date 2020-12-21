@@ -2260,10 +2260,25 @@ class EMCbool(bpy.types.Operator):
         description="Operation Used",
         default='diff'
         )
+
+    old: bpy.props.BoolProperty(
+        name = "Individual Objects", 
+        description = "Use the old, original method of using one modifier per object", 
+        default = False
+    )
     
     apply: bpy.props.BoolProperty(
         default = False
     )
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "operation")
+        if int_version > 290:
+            row = layout.row(align=True)
+            row.prop(self, "old")
+        row = layout.row(align=True)
+        row.prop(self, "apply")
 
     def execute(self, context):
 
@@ -2278,7 +2293,7 @@ class EMCbool(bpy.types.Operator):
             self.report({"WARNING"}, "Select at least 2 objects")
             return{'CANCELLED'}
 
-        if int_version > 290 and self.operation != "slice":
+        if int_version > 284 and self.operation != "slice" and self.old == False:
             bpy.ops.object.select_all(action='DESELECT')
             active.select_set(True)
             bpy.context.view_layer.objects.active = active
@@ -2307,6 +2322,7 @@ class EMCbool(bpy.types.Operator):
 
                 i.display_type = 'BOUNDS'
                 i.parent = active
+                i.matrix_parent_inverse = active.matrix_world.inverted()
 
             bpy.context.view_layer.active_layer_collection = current_col
 
@@ -2346,7 +2362,7 @@ class EMCbool(bpy.types.Operator):
                     bpy.context.object.modifiers[-1].operation = 'INTERSECT'
                 else:
                     bpy.context.object.modifiers[-1].operation = 'DIFFERENCE'
-                    bpy.ops.object.duplicate_move()
+                    bpy.ops.object.duplicate_move_linked()
                     bpy.context.object.modifiers[-1].operation = 'INTERSECT'
                     
                     bpy.context.active_object.parent = active
