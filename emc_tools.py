@@ -4588,6 +4588,7 @@ class EmcDisplaceModal(bpy.types.Operator):
     temp_norm: bpy.props.FloatProperty()
     edit: bpy.props.BoolProperty()
     wires: bpy.props.BoolProperty()
+    v_group: bpy.props.BoolProperty()
 
     def modal(self, context, event):
             
@@ -4640,6 +4641,8 @@ class EmcDisplaceModal(bpy.types.Operator):
             bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
             if self.edit == True:
                 bpy.ops.object.mode_set(mode='EDIT')
+            if self.v_group == True:
+                bpy.ops.object.vertex_group_remove(all=False, all_unlocked=False)
             context.area.header_text_set(None)
             bpy.types.WorkSpace.status_text_set_internal(None)
             bpy.context.object.show_wire = self.wires
@@ -4657,11 +4660,24 @@ class EmcDisplaceModal(bpy.types.Operator):
         self.first_mouse_x = event.mouse_x
         self.current_mouse_x = 0
         self.wires = bpy.context.object.show_wire
+        self.v_group = False
 
         bpy.ops.object.modifier_add(type='DISPLACE')
         bpy.context.object.modifiers[-1].direction = 'X'
 
         if bpy.context.object.mode == 'EDIT':
+            bm = bmesh.from_edit_mesh(context.edit_object.data)
+            selected_verts = [vertex for vertex in bm.verts if vertex.select]
+            if len(selected_verts) > 0:
+                bpy.ops.object.vertex_group_add()
+                bpy.context.scene.tool_settings.vertex_group_weight = 1
+                bpy.ops.object.vertex_group_assign()
+                bpy.context.object.vertex_groups[-1].name = 'EMC Displace'
+                bpy.context.object.modifiers[-1].vertex_group = bpy.context.object.vertex_groups[-1].name
+                bpy.context.object.modifiers[-1].show_in_editmode = True
+                bpy.context.object.modifiers[-1].show_on_cage = True
+
+                self.v_group = True
             bpy.ops.object.mode_set(mode='OBJECT')
             self.edit = True
         else:
