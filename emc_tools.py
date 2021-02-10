@@ -1660,7 +1660,7 @@ class SmoothFaces(bpy.types.Operator):
         bpy.context.tool_settings.mesh_select_mode = (False, True, False)
         bpy.ops.mesh.dissolve_mode(use_verts=False, use_face_split=False, use_boundary_tear=False)
         bpy.ops.object.vertex_group_remove(all=False, all_unlocked=False)
-        # bpy.context.object.vertex_groups.active_index = len(bpy.context.object.vertex_groups)-1
+        bpy.context.object.vertex_groups.active_index = len(bpy.context.object.vertex_groups)-1
         bpy.ops.object.vertex_group_select()
 
         if self.Cuts == 1:
@@ -2294,6 +2294,8 @@ class EMCbool(bpy.types.Operator):
             return{'CANCELLED'}
 
         if int_version > 284 and self.operation != "slice" and self.old == False:
+            check_col_viz = False
+
             bpy.ops.object.select_all(action='DESELECT')
             active.select_set(True)
             bpy.context.view_layer.objects.active = active
@@ -2306,6 +2308,10 @@ class EMCbool(bpy.types.Operator):
                 
             current_col = bpy.context.view_layer.active_layer_collection
             bpy.context.view_layer.active_layer_collection = bpy.context.view_layer.layer_collection.children['EMC Extras']
+
+            if bpy.context.layer_collection.exclude == True:
+                bpy.context.layer_collection.exclude = False
+                check_col_viz = True
 
             bpy.data.collections.new('EMC Bool')
 
@@ -2324,8 +2330,6 @@ class EMCbool(bpy.types.Operator):
                 i.parent = active
                 i.matrix_parent_inverse = active.matrix_world.inverted()
 
-            bpy.context.view_layer.active_layer_collection = current_col
-
             bpy.context.object.modifiers[-1].collection = bpy.data.collections[colnameget]
 
             if self.operation == "diff":
@@ -2337,6 +2341,12 @@ class EMCbool(bpy.types.Operator):
             else:
                 bpy.context.object.modifiers[-1].operation = 'INTERSECT'
                 bpy.data.collections[colnameget].color_tag = 'COLOR_05'
+
+            if check_col_viz:
+                bpy.context.view_layer.active_layer_collection = bpy.context.view_layer.layer_collection.children['EMC Extras']
+                bpy.context.layer_collection.exclude = True
+            
+            bpy.context.view_layer.active_layer_collection = current_col
 
         else:
             for i in selected:
