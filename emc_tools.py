@@ -3589,6 +3589,7 @@ class EmcBevelModal(bpy.types.Operator):
             
         elif event.type == 'V':
             bpy.context.object.modifiers[self.mod_loc].limit_method = 'VGROUP'
+            bpy.context.object.modifiers[self.mod_loc].vertex_group = bpy.context.object.vertex_groups[-1].name
 
         elif event.type == 'X':
             if event.value == 'PRESS':
@@ -5119,6 +5120,33 @@ class AddModifierCustom(bpy.types.Operator):
         default='DECIMATE'
         )
 
+    simplify: bpy.props.FloatProperty(
+        name = "Decimate Curve", 
+        description = "Decimate the converted Grease Pencil stroke", 
+        default = 0.3,
+        min = 0.0, max = 1.0,
+        subtype = 'FACTOR'
+    )
+
+    is_gp: bpy.props.BoolProperty(
+        name = "is it grease pencil or not", 
+        description = "what the name says", 
+        default = False
+    )
+
+ 
+    def draw(self, context):
+        objs = bpy.context.selected_objects
+        active = bpy.context.active_object
+        objs.remove(active)
+
+        layout = self.layout
+        layout.prop(self, "modifier")
+        if self.modifier == "DATA_TRANSFER":
+            if self.is_gp:
+                row = layout.row(align=True)
+                row.prop(self, "simplify")
+
     def execute(self, context):
         objs = bpy.context.selected_objects
         active = bpy.context.active_object
@@ -5130,9 +5158,57 @@ class AddModifierCustom(bpy.types.Operator):
             bpy.context.object.modifiers[-1].angle_limit = 0.0174533
             
         elif self.modifier == "DATA_TRANSFER":
+            gp_obj = "none"
+
             bpy.ops.object.modifier_add(type=self.modifier)
+            bpy.ops.object.vertex_group_add()
+            bpy.context.object.vertex_groups[-1].name = 'EMC GP_Bevel'
+
             try:
-                bpy.context.object.modifiers[-1].object = objs[0]
+                if objs[0].type == 'GPENCIL':
+                    self.is_gp = True
+                    bpy.ops.object.select_all(action='DESELECT')
+                    objs[0].select_set(True)
+                    bpy.context.view_layer.objects.active = objs[0]
+                    bpy.ops.gpencil.convert(type='CURVE', use_timing_data=True)
+                    for i in bpy.context.selected_objects:
+                        if i != objs[0]:
+                            gp_obj = i
+
+                    bpy.ops.object.select_all(action='DESELECT')
+                    objs[0].select_set(True)
+                    bpy.context.view_layer.objects.active = objs[0]
+                    bpy.ops.object.delete(use_global=False)
+
+                    gp_obj.select_set(True)
+                    bpy.context.view_layer.objects.active = gp_obj
+                    bpy.ops.object.editmode_toggle()
+                    bpy.ops.curve.decimate(ratio=self.simplify)
+                    bpy.ops.object.editmode_toggle()
+                    bpy.ops.object.convert(target='MESH')
+                    bpy.ops.object.editmode_toggle()
+                    bpy.ops.mesh.select_all(action='SELECT')
+                    bpy.ops.object.vertex_group_add()
+                    bpy.context.scene.tool_settings.vertex_group_weight = 1
+                    bpy.ops.object.vertex_group_assign()
+                    bpy.context.object.vertex_groups[-1].name = active.vertex_groups[-1].name
+                    bpy.ops.object.editmode_toggle()
+                    bpy.context.object.display_type = 'BOUNDS'
+                    move_to_col(gp_obj, "EMC Extras", True, True)
+
+                    bpy.ops.object.select_all(action='DESELECT')
+                    active.select_set(True)
+                    bpy.context.view_layer.objects.active = active
+
+                    bpy.context.object.modifiers[-1].use_vert_data = True
+                    bpy.context.object.modifiers[-1].data_types_verts = {'VGROUP_WEIGHTS'}
+                    # bpy.context.object.modifiers[-1].vert_mapping = 'POLYINTERP_NEAREST'
+                    bpy.context.object.modifiers[-1].use_max_distance = True
+
+                    bpy.context.object.modifiers[-1].object = gp_obj
+                else:
+                    bpy.context.object.modifiers[-1].object = objs[0]
+
             except:
                 self.report({"INFO"}, "Selected object can be used as target")
 
