@@ -5193,7 +5193,8 @@ class AddModifierCustom(bpy.types.Operator):
                     bpy.ops.object.vertex_group_assign()
                     bpy.context.object.vertex_groups[-1].name = active.vertex_groups[-1].name
                     bpy.ops.object.editmode_toggle()
-                    bpy.context.object.display_type = 'BOUNDS'
+                    gp_obj.parent = active
+                    gp_obj.matrix_parent_inverse = active.matrix_world.inverted()
                     move_to_col(gp_obj, "EMC Extras", True, True)
 
                     bpy.ops.object.select_all(action='DESELECT')
