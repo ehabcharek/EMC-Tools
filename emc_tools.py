@@ -3730,7 +3730,7 @@ class EmcBevelModal(bpy.types.Operator):
             self.edit = False
 
         try:
-            bpy.data.window_managers["WinMan"].ml_active_object_modifier_active_index = -1
+            bpy.data.window_managers["WinMan"].modifier_list.active_object_modifier_active_index = -1
         except:
             pass  
         
@@ -4081,7 +4081,7 @@ class EmcArrayModal(bpy.types.Operator):
             pass
 
         try:
-            bpy.data.window_managers["WinMan"].ml_active_object_modifier_active_index = self.mod_index
+            bpy.data.window_managers["WinMan"].modifier_list.active_object_modifier_active_index = self.mod_index
         except:
             pass 
         
@@ -4243,7 +4243,7 @@ class EmcScrewModal(bpy.types.Operator):
         try:
             context.area.header_text_set(
                 "Steps: " + str(bpy.context.object.modifiers[-1].steps) + " | " + 
-                "Angle: " + str(round(bpy.context.object.modifiers[-1].angle, 3)) + " | " + 
+                "Angle: " + str(round(bpy.context.object.modifiers[-1].angle*180/math.pi, 3)) + " | " + 
                 "Screw: "  + str(round(bpy.context.object.modifiers[-1].screw_offset, 2)) + " | " + 
                 "Calc Order: " + str(bpy.context.object.modifiers[-1].use_normal_calculate) + " | " + 
                 "Flip: " + str(bpy.context.object.modifiers[-1].use_normal_flip) + " | " + 
@@ -4277,7 +4277,7 @@ class EmcScrewModal(bpy.types.Operator):
         create_driver(my_name, 'render_steps', 'var', my_mod)
             
         try:
-            bpy.data.window_managers["WinMan"].ml_active_object_modifier_active_index = -1
+            bpy.data.window_managers["WinMan"].modifier_list.active_object_modifier_active_index = -1
         except:
             pass  
 
@@ -4303,6 +4303,7 @@ class EmcDeformModal(bpy.types.Operator):
     wires: bpy.props.BoolProperty()
     obj_origin: bpy.props.StringProperty()
     obj_main: bpy.props.StringProperty()
+    myType: bpy.props.StringProperty()
 
     def modal(self, context, event):
             
@@ -4323,24 +4324,27 @@ class EmcDeformModal(bpy.types.Operator):
                 
             bpy.context.object.modifiers[-1].angle = number
             bpy.context.object.modifiers[-1].factor = number
-            # print(self.temp_norm + (delta - self.current_mouse_x))
-            
+            # print(self.temp_norm + (delta - self.current_mouse_x))        
             
         elif event.type == 'T':
             if event.value == 'PRESS':
                 bpy.context.object.modifiers[-1].deform_method = 'TWIST'
+                self.myType = "Angle: "
             
         elif event.type == 'B':
             if event.value == 'PRESS':
                 bpy.context.object.modifiers[-1].deform_method = 'BEND'
+                self.myType = "Angle: "
         
         elif event.type == 'A':
             if event.value == 'PRESS':
                 bpy.context.object.modifiers[-1].deform_method = 'TAPER'
+                self.myType = "Factor: "
             
         elif event.type == 'S':
             if event.value == 'PRESS':
                 bpy.context.object.modifiers[-1].deform_method = 'STRETCH'
+                self.myType = "Factor: "
 
         elif event.type == 'Q':
             if event.value == 'PRESS':
@@ -4395,9 +4399,10 @@ class EmcDeformModal(bpy.types.Operator):
             if len(bpy.data.collections['EMC Extras'].objects) == 0:
                 bpy.data.collections.remove(bpy.data.collections['EMC Extras'])
             return {'CANCELLED'}
+
         try:
             context.area.header_text_set(
-                "Factor: " + str(round(bpy.context.object.modifiers[-1].angle, 3)) + " | " + 
+                self.myType + str(round(bpy.context.object.modifiers[-1].angle*180/math.pi, 3)) + " | " + 
                 "Axis: "  + bpy.context.object.modifiers[-1].deform_axis + " | " + 
                 "Deform Method: "  + bpy.context.object.modifiers[-1].deform_method
             )
@@ -4411,6 +4416,7 @@ class EmcDeformModal(bpy.types.Operator):
         self.current_mouse_x = 0
         self.init = True
         self.wires = bpy.context.object.show_wire
+        self.myType = "Angle: "
 
         bpy.context.object.show_wire = True
 
@@ -4447,7 +4453,7 @@ class EmcDeformModal(bpy.types.Operator):
         move_to_col(origin, "EMC Extras", True, True)
             
         try:
-            bpy.data.window_managers["WinMan"].ml_active_object_modifier_active_index = -1
+            bpy.data.window_managers["WinMan"].modifier_list.active_object_modifier_active_index = -1
         except:
             pass  
 
@@ -4585,7 +4591,7 @@ class EmcSolidifyModal(bpy.types.Operator):
             self.edit = False
             
         try:
-            bpy.data.window_managers["WinMan"].ml_active_object_modifier_active_index = -1
+            bpy.data.window_managers["WinMan"].modifier_list.active_object_modifier_active_index = -1
         except:
             pass  
 
@@ -4731,7 +4737,7 @@ class EmcDisplaceModal(bpy.types.Operator):
             self.edit = False
             
         try:
-            bpy.data.window_managers["WinMan"].ml_active_object_modifier_active_index = -1
+            bpy.data.window_managers["WinMan"].modifier_list.active_object_modifier_active_index = -1
         except:
             pass  
 
