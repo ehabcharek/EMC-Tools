@@ -1291,7 +1291,7 @@ class FillHoles(bpy.types.Operator):
         return{'FINISHED'}
 
 class Autosmooth(bpy.types.Operator):
-    """Set Smoothing Based on Angle"""
+    """Set Smoothing Based on Angle on ALL selected objects"""
     bl_label = "Auto Smooth Shading"
     bl_idname = "emc.autosmooth"
     bl_options = {'REGISTER', 'UNDO'}
@@ -1425,7 +1425,7 @@ class FaceMapSharp(bpy.types.Operator):
         return{'FINISHED'}
 
 class SmoothAngle(bpy.types.Operator):
-    """Set Angle of Smoothing (Default = 30d)"""
+    """Set Angle of Smoothing. Default = 30d if more than one object is selected"""
     bl_label = "Auto Smooth Angle"
     bl_idname = "emc.smoothangle"
     bl_options = {'REGISTER', 'UNDO'}
@@ -1570,7 +1570,7 @@ class PropReverse(bpy.types.Operator):
         return{'FINISHED'}
 
 class SmoothFaces(bpy.types.Operator):
-    """Subdivide and Smooth Selected Faces"""
+    """Subdivide and Smooth Selected Faces. Subdivision is identical to the Subdivision Surface modifier. Smoothing is inaccurate. Creases are not supported"""
     bl_label = "Smooth Faces"
     bl_idname = "emc.smoothfaces"
     bl_options = {'REGISTER', 'UNDO'}
@@ -1764,7 +1764,7 @@ class EmcMirror(bpy.types.Operator):
         return{'FINISHED'}
 
 class ProjectCurve(bpy.types.Operator):
-    """Project Curve on mesh and create a new Edge (Mesh) from the projection"""
+    """Project Curve on mesh and create a new Edge (Path) from the projection"""
     bl_label = "Project Curve"
     bl_idname = "emc.projcurve"
 
@@ -3487,7 +3487,7 @@ class addTorus(bpy.types.Operator):
         return{'FINISHED'}
 
 class EmcBevelModal(bpy.types.Operator):
-    """Create a Bevel Modifier"""
+    """Create a Bevel Modifier. If in edit mode, only the selected vertices will be affected (automatic vertex group assignment)"""
     bl_idname = "emc.bevelmod"
     bl_label = "Bevel"
     bl_options = {'REGISTER', 'UNDO'}
@@ -3738,7 +3738,7 @@ class EmcBevelModal(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
 class EmcArrayModal(bpy.types.Operator):
-    """Create an Array Modifier"""
+    """Create an Array Modifier. If a curve is selected, the array modifier will be set to fit the curve, and an option to deform based on curve will be available (D shortcut)"""
     bl_idname = "emc.arraymod"
     bl_label = "Array"
     bl_options = {'REGISTER', 'UNDO', 'UNDO_GROUPED'}
@@ -4425,7 +4425,7 @@ class EmcDeformModal(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
 class EmcSolidifyModal(bpy.types.Operator):
-    """Create a Solidify Modifier"""
+    """Create a Solidify Modifier. If in edit mode, only the selected vertices will be affected (automatic vertex group assignment)"""
     bl_idname = "emc.solidifymod"
     bl_label = "Solidify"
     bl_options = {'REGISTER', 'UNDO'}
@@ -4588,7 +4588,7 @@ class EmcWeightedNormals(bpy.types.Operator):
         return{'FINISHED'}
 
 class EmcDisplaceModal(bpy.types.Operator):
-    """Create a Displace Modifier"""
+    """Create a Displace Modifier. If in edit mode, only the selected vertices will be affected (automatic vertex group assignment)"""
     bl_idname = "emc.displacemod"
     bl_label = "Displace"
     bl_options = {'REGISTER', 'UNDO'}
@@ -4925,7 +4925,7 @@ class MoveIsland(bpy.types.Operator):
         return{'FINISHED'}
 
 class BuildCorner(bpy.types.Operator):
-    """Create corner topology from a selected edge between a triangle and a pentagon"""
+    """Create corner topology from a selected edge between a triangle and a pentagon. WILL NOT ALWAYS WORK AS EXPECTED"""
     bl_label = "Build Corner"
     bl_idname = "emc.buildcorner"
     bl_options = {'REGISTER', 'UNDO'}
@@ -4967,7 +4967,7 @@ class BuildCorner(bpy.types.Operator):
         return{'FINISHED'}
 
 class PanelLines(bpy.types.Operator):
-    """Create panel line separation on selected vertices (ONLY ACTIVATE ONCE. To add more lines, add vertices to the Panel Lines vertex group)"""
+    """Create panel line separation on selected vertices (ONLY ACTIVATE ONCE. To add more lines, add vertices to the 'EMC Panel Lines' vertex group)"""
     bl_label = "Panel Lines"
     bl_idname = "emc.panellines"
     bl_options = {'REGISTER', 'UNDO'}
@@ -5055,7 +5055,7 @@ class Purge(bpy.types.Operator):
 
 class CustomNormals(bpy.types.Operator):
     """Add or Clear Custom Split Normals"""
-    bl_label = "Add/Clear Custom Split Normals"
+    bl_label = "Add/Clear Custom Split Normals for ALL selected objects"
     bl_idname = "emc.customnormals"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -5086,7 +5086,7 @@ class CustomNormals(bpy.types.Operator):
         return{'FINISHED'}
 
 class SelLinked(bpy.types.Operator):
-    """Select linked components/loops based on selection mode"""
+    """Select linked components/loops/UV Islands based on selection mode"""
     bl_label = "Select Linked Plus"
     bl_idname = "emc.sellink"
     bl_options = {'REGISTER', 'UNDO'}
@@ -5110,11 +5110,11 @@ class AddModifierCustom(bpy.types.Operator):
     modifier: bpy.props.EnumProperty(
         name="Modifier",
         items=(("DECIMATE", "Decimate", "Decimate Modifier"),
-               ("DATA_TRANSFER", "Data Transfer", "Data Transfer Modifier"),
-               ("SHRINKWRAP", "Shrinkwrap", "Shrinkwrap Modifier"),
-               ("MESH_DEFORM", "Mesh Deform", "Mesh Deform Modifier"),
+               ("DATA_TRANSFER", "Data Transfer", "Data Transfer Modifier. Selected object will be assigned to the modifier as target. Grease Pencil objects will be automatically converted to mesh objects. Objects with no vertex group will be assigned a vertex group as well as the active object. TIP: adjust the Max Distance slider if the projection is too spread out"),
+               ("SHRINKWRAP", "Shrinkwrap", "Shrinkwrap Modifier. Selected object will be assigned to the modifier as target"),
+               ("MESH_DEFORM", "Mesh Deform", "Mesh Deform Modifier. Selected object will be assigned to the modifier as target"),
                ("TRIANGULATE", "Triangulate", "Triangulate Modifier"),
-               ("VERTEX_WEIGHT_EDIT", "Vertex Weight Edit", "Vertex Weight Edit Modifier"),
+               ("VERTEX_WEIGHT_EDIT", "Vertex Weight Edit", "Vertex Weight Edit Modifier. Selected object will be assigned to the modifier as target"),
                ("CAST", "Cast", "Cast Modifier")),
         description="Modifiers with custom set parameters",
         default='DECIMATE'
@@ -5128,18 +5128,20 @@ class AddModifierCustom(bpy.types.Operator):
         subtype = 'FACTOR'
     )
 
+    distance: bpy.props.FloatProperty(
+        name = "Projection Distance", 
+        description = "Elements affected by the projection", 
+        default = 0.5,
+        min = 0.0, max = 1.0,
+    )
+
     is_gp: bpy.props.BoolProperty(
         name = "is it grease pencil or not", 
         description = "what the name says", 
         default = False
     )
-
  
     def draw(self, context):
-        objs = bpy.context.selected_objects
-        active = bpy.context.active_object
-        objs.remove(active)
-
         layout = self.layout
         layout.prop(self, "modifier")
         if self.modifier == "DATA_TRANSFER":
@@ -5161,12 +5163,14 @@ class AddModifierCustom(bpy.types.Operator):
             gp_obj = "none"
 
             bpy.ops.object.modifier_add(type=self.modifier)
-            bpy.ops.object.vertex_group_add()
-            bpy.context.object.vertex_groups[-1].name = 'EMC GP_Bevel'
-
+            
             try:
                 if objs[0].type == 'GPENCIL':
                     self.is_gp = True
+
+                    bpy.ops.object.vertex_group_add()
+                    bpy.context.object.vertex_groups[-1].name = 'EMC GP_VG_Project'
+
                     bpy.ops.object.select_all(action='DESELECT')
                     objs[0].select_set(True)
                     bpy.context.view_layer.objects.active = objs[0]
@@ -5203,12 +5207,39 @@ class AddModifierCustom(bpy.types.Operator):
 
                     bpy.context.object.modifiers[-1].use_vert_data = True
                     bpy.context.object.modifiers[-1].data_types_verts = {'VGROUP_WEIGHTS'}
-                    # bpy.context.object.modifiers[-1].vert_mapping = 'POLYINTERP_NEAREST'
                     bpy.context.object.modifiers[-1].use_max_distance = True
+                    bpy.context.object.modifiers[-1].max_distance = 0.5
 
                     bpy.context.object.modifiers[-1].object = gp_obj
                 else:
                     bpy.context.object.modifiers[-1].object = objs[0]
+
+                    if len(objs[0].vertex_groups) == 0:
+                        bpy.ops.object.vertex_group_add()
+                        bpy.context.object.vertex_groups[-1].name = 'EMC VG_Project'
+
+                        bpy.ops.object.select_all(action='DESELECT')
+                        objs[0].select_set(True)
+                        bpy.context.view_layer.objects.active = objs[0]
+                        bpy.context.object.display_type = 'BOUNDS'
+
+                        bpy.ops.object.editmode_toggle()
+                        bpy.ops.mesh.select_all(action='SELECT')
+                        bpy.ops.object.vertex_group_add()
+                        bpy.context.scene.tool_settings.vertex_group_weight = 1
+                        bpy.ops.object.vertex_group_assign()
+                        bpy.context.object.vertex_groups[-1].name = active.vertex_groups[-1].name
+                        bpy.ops.object.editmode_toggle()
+                        
+                        bpy.ops.object.select_all(action='DESELECT')
+                        active.select_set(True)
+                        bpy.context.view_layer.objects.active = active
+
+                        bpy.context.object.modifiers[-1].use_vert_data = True
+                        bpy.context.object.modifiers[-1].data_types_verts = {'VGROUP_WEIGHTS'}
+                        bpy.context.object.modifiers[-1].vert_mapping = 'POLY_NEAREST'
+                        bpy.context.object.modifiers[-1].use_max_distance = True
+                        bpy.context.object.modifiers[-1].max_distance = 0.5
 
             except:
                 self.report({"INFO"}, "Selected object can be used as target")
@@ -5491,7 +5522,7 @@ class EmcSymmetry(Menu):
 #Just Shortcuts
 
 class ToggleSubD(bpy.types.Operator):
-    """Toggle all SubD Modifier Viewport Visibility. If none exist, one will be added"""
+    """Toggle all SubD Modifier Viewport Visibility for ALL selected objects. If none exist, one will be added"""
     bl_label = "Toggle SubD"
     bl_idname = "emc.togglesubd"
     bl_options = {'REGISTER', 'UNDO'}
