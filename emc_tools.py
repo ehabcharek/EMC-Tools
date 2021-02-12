@@ -3574,9 +3574,17 @@ class EmcBevelModal(bpy.types.Operator):
         
         elif event.type == 'WHEELUPMOUSE':
             bpy.context.object.modifiers[self.mod_loc].segments += 1
+
+        elif event.type == 'PAGE_UP':
+            if event.value == 'PRESS':
+                bpy.context.object.modifiers[self.mod_loc].segments += 1
             
         elif event.type == 'WHEELDOWNMOUSE':
             bpy.context.object.modifiers[self.mod_loc].segments -= 1
+
+        elif event.type == 'PAGE_DOWN':
+            if event.value == 'PRESS':
+                bpy.context.object.modifiers[self.mod_loc].segments -= 1
             
         elif event.type == 'A':
             bpy.context.object.modifiers[self.mod_loc].limit_method = 'ANGLE'
@@ -3667,7 +3675,7 @@ class EmcBevelModal(bpy.types.Operator):
                 "Angle: " + str(round(bpy.context.object.modifiers[self.mod_loc].angle_limit*180/math.pi, 1)) + " | " + 
                 "Loop Slide: " + str(bpy.context.object.modifiers[self.mod_loc].loop_slide)
             )
-            bpy.types.WorkSpace.status_text_set_internal("MMB Scroll: Segments | Ctrl: Profile | Shift: Angle | C: Clamp | N/A/W/V: Limit Method | X: Only Vertices | S: Outer Miter | H: Harden Normals | Q: Toggle Wireframe | L: Loop Slide")
+            bpy.types.WorkSpace.status_text_set_internal("MMB Scroll/ Page U/D: Segments | Ctrl: Profile | Shift: Angle | C: Clamp | N/A/W/V: Limit Method | X: Only Vertices | S: Outer Miter | H: Harden Normals | Q: Toggle Wireframe | L: Loop Slide")
         except:
             pass
         return {'RUNNING_MODAL'}
@@ -3885,9 +3893,17 @@ class EmcArrayModal(bpy.types.Operator):
         
         elif event.type == 'WHEELUPMOUSE':
             bpy.context.object.modifiers[self.mod_index].count += 1
+
+        elif event.type == 'PAGE_UP':
+            if event.value == 'PRESS':
+                bpy.context.object.modifiers[self.mod_index].count += 1
             
         elif event.type == 'WHEELDOWNMOUSE':
             bpy.context.object.modifiers[self.mod_index].count -= 1
+
+        elif event.type == 'PAGE_DOWN':
+            if event.value == 'PRESS':
+                bpy.context.object.modifiers[self.mod_index].count -= 1
         
         elif event.type == 'X':
             if event.value == 'PRESS':
@@ -4027,7 +4043,7 @@ class EmcArrayModal(bpy.types.Operator):
                 "Merge: " + str(bpy.context.object.modifiers[self.mod_index].use_merge_vertices) + " | " +  
                 "First Last: " + str(bpy.context.object.modifiers[self.mod_index].use_merge_vertices_cap)
             )
-            bpy.types.WorkSpace.status_text_set_internal("MMB Scroll: Count | X/Y/Z: Set Axis | C: Circular Array | D: Curve Deform | M: Merge Vertices | F: First Last | Q: Toggle Wireframe")
+            bpy.types.WorkSpace.status_text_set_internal("MMB Scroll/ Page U/D: Count | X/Y/Z: Set Axis | C: Circular Array | D: Curve Deform | M: Merge Vertices | F: First Last | Q: Toggle Wireframe")
         except:
             pass
         return {'RUNNING_MODAL'}
@@ -4157,8 +4173,16 @@ class EmcScrewModal(bpy.types.Operator):
         if event.type == 'WHEELUPMOUSE':
             bpy.context.object.modifiers[-1].iterations += 1
 
+        elif event.type == 'PAGE_UP':
+            if event.value == 'PRESS':
+                bpy.context.object.modifiers[-1].iterations += 1
+
         if event.type == 'WHEELDOWNMOUSE':
             bpy.context.object.modifiers[-1].iterations -= 1
+
+        elif event.type == 'PAGE_DOWN':
+            if event.value == 'PRESS':
+                bpy.context.object.modifiers[-1].iterations -= 1
 
         elif event.type == 'S':
             if event.value == 'PRESS':
@@ -4187,6 +4211,14 @@ class EmcScrewModal(bpy.types.Operator):
         elif event.type == 'Z':
             if event.value == 'PRESS':
                 bpy.context.object.modifiers[-1].axis = 'Z'
+
+        elif event.type == 'NUMPAD_0' or event.type == 'ZERO':
+            if event.value == 'PRESS':
+                bpy.context.object.modifiers[-1].angle = 0
+
+        elif event.type == 'Q':
+            if event.value == 'PRESS':
+                bpy.context.object.show_wire = not bpy.context.object.show_wire                
 
 
         elif event.type in {'MIDDLEMOUSE'}:
@@ -4217,7 +4249,7 @@ class EmcScrewModal(bpy.types.Operator):
                 "Flip: " + str(bpy.context.object.modifiers[-1].use_normal_flip) + " | " + 
                 "Merge: " + str(bpy.context.object.modifiers[-1].use_merge_vertices)
             )
-            bpy.types.WorkSpace.status_text_set_internal("Ctrl: Screw | Alt: Angle | C: Calc Order | F: Flip | X/Y/Z: Axis | S: Smooth Shading | M: Merge Vertices")
+            bpy.types.WorkSpace.status_text_set_internal("MMB Scroll/ Page U/D: Iterations | Ctrl: Screw | Alt: Angle | C: Calc Order | F: Flip | X/Y/Z: Axis | S: Smooth Shading | M: Merge Vertices | 0: Set Angle to 0d | Q: Toggle Wireframe")
         except:
             pass
         return {'RUNNING_MODAL'}
@@ -4310,7 +4342,7 @@ class EmcDeformModal(bpy.types.Operator):
             if event.value == 'PRESS':
                 bpy.context.object.modifiers[-1].deform_method = 'STRETCH'
 
-        elif event.type == 'W':
+        elif event.type == 'Q':
             if event.value == 'PRESS':
                 bpy.context.object.show_wire = not bpy.context.object.show_wire
         
@@ -4369,7 +4401,7 @@ class EmcDeformModal(bpy.types.Operator):
                 "Axis: "  + bpy.context.object.modifiers[-1].deform_axis + " | " + 
                 "Deform Method: "  + bpy.context.object.modifiers[-1].deform_method
             )
-            bpy.types.WorkSpace.status_text_set_internal("X/Y/Z: Axis | Shift + Axis: Lock Axis | T/B/A/S: Deform Method | W: Wireframe")
+            bpy.types.WorkSpace.status_text_set_internal("X/Y/Z: Axis | Shift + Axis: Lock Axis | T/B/A/S: Deform Method | Q: Toggle Wireframe")
         except:
             pass
         return {'RUNNING_MODAL'}
@@ -4492,6 +4524,10 @@ class EmcSolidifyModal(bpy.types.Operator):
             if event.value == 'PRESS':
                 bpy.context.object.modifiers[-1].use_flip_normals = not bpy.context.object.modifiers[-1].use_flip_normals
 
+        elif event.type == 'Q':
+            if event.value == 'PRESS':
+                bpy.context.object.show_wire = not bpy.context.object.show_wire
+
 
         elif event.type in {'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
             return {'PASS_THROUGH'}
@@ -4523,7 +4559,7 @@ class EmcSolidifyModal(bpy.types.Operator):
             "Fill Rim: " + str(bpy.context.object.modifiers[-1].use_rim) + " | " + 
             "Only Rim: " + str(bpy.context.object.modifiers[-1].use_rim_only)
         )
-        bpy.types.WorkSpace.status_text_set_internal("Ctrl: Offset | F: Flip Normals | E: Even Thickness | H: High Quality Normals | R: Fill Rim | O: Only Rim")
+        bpy.types.WorkSpace.status_text_set_internal("Ctrl: Offset | F: Flip Normals | E: Even Thickness | H: High Quality Normals | R: Fill Rim | O: Only Rim | Q: Toggle Wireframe")
         return {'RUNNING_MODAL'}
 
     def invoke(self, context, event):
@@ -4625,7 +4661,7 @@ class EmcDisplaceModal(bpy.types.Operator):
             if event.value == 'PRESS':
                 bpy.context.object.modifiers[-1].direction = 'NORMAL'
             
-        elif event.type == 'W':
+        elif event.type == 'Q':
             if event.value == 'PRESS':
                 bpy.context.object.show_wire = not bpy.context.object.show_wire
 
@@ -4664,7 +4700,7 @@ class EmcDisplaceModal(bpy.types.Operator):
             "Direction: " + str(bpy.context.object.modifiers[-1].direction) + " | " + 
             "Space: "  + str(bpy.context.object.modifiers[-1].space)
         )
-        bpy.types.WorkSpace.status_text_set_internal("X/Y/Z/N: Direction | S: Space")
+        bpy.types.WorkSpace.status_text_set_internal("X/Y/Z/N: Direction | S: Space | Q: Toggle Wireframe")
         return {'RUNNING_MODAL'}
 
     def invoke(self, context, event):
