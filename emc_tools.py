@@ -3938,7 +3938,7 @@ class EmcArrayModal(bpy.types.Operator):
                             bpy.context.object.modifiers[self.mod_index].use_relative_offset = True
                             bpy.context.object.modifiers[self.mod_index].use_object_offset = False
 
-                            if len(bpy.data.collections['EMC Extras'].objects) == 0:
+                            if len(bpy.data.collections['EMC Extras'].objects) == 0 and len(bpy.data.collections['EMC Extras'].children) == 0:
                                 bpy.data.collections.remove(bpy.data.collections['EMC Extras'])
                         self.add_circle = True
 
