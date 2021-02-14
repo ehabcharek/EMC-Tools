@@ -3746,7 +3746,7 @@ class EmcBevelModal(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
 class EmcArrayModal(bpy.types.Operator):
-    """Create an Array Modifier. If a curve is selected, the array modifier will be set to fit the curve, and an option to deform based on curve will be available (D shortcut)"""
+    """Create an Array Modifier. If a curve is selected, the array modifier will be set to fit the curve, and an option to deform based on curve will be available with 'D'. TIP: if the automatic fit to curve setting isn't working, refresh with 'I'"""
     bl_idname = "emc.arraymod"
     bl_label = "Array"
     bl_options = {'REGISTER', 'UNDO', 'UNDO_GROUPED'}
@@ -3905,6 +3905,7 @@ class EmcArrayModal(bpy.types.Operator):
 
                     if self.add_circle == True:
                         bpy.context.object.modifiers[self.mod_index].use_relative_offset = False
+                        bpy.context.object.modifiers[self.mod_index].use_constant_offset = False
                         bpy.context.object.modifiers[self.mod_index].use_object_offset = True
                         bpy.context.object.modifiers[self.mod_index].offset_object = bpy.data.objects[self.obj_offset]
 
@@ -3936,6 +3937,7 @@ class EmcArrayModal(bpy.types.Operator):
 
                             bpy.context.view_layer.objects.active = bpy.data.objects[the_object]
                             bpy.context.object.modifiers[self.mod_index].use_relative_offset = True
+                            bpy.context.object.modifiers[self.mod_index].use_constant_offset = False
                             bpy.context.object.modifiers[self.mod_index].use_object_offset = False
 
                             if len(bpy.data.collections['EMC Extras'].objects) == 0 and len(bpy.data.collections['EMC Extras'].children) == 0:
@@ -3955,7 +3957,10 @@ class EmcArrayModal(bpy.types.Operator):
                 except:
                     self.report({"WARNING"}, "Displacement modifier not found")
             else:
-                bpy.context.object.modifiers[self.mod_index].relative_offset_displace[self.axis_num] = displace
+                if self.instance and self.axis_name == 'Z' and self.add_circle:
+                    bpy.context.object.modifiers[self.mod_index].constant_offset_displace[self.axis_num] = displace
+                else:
+                    bpy.context.object.modifiers[self.mod_index].relative_offset_displace[self.axis_num] = displace
         
         elif event.type == 'WHEELUPMOUSE':
             bpy.context.object.modifiers[self.mod_index].count += 1
@@ -3975,6 +3980,8 @@ class EmcArrayModal(bpy.types.Operator):
             if event.value == 'PRESS':
                 self.axis_num = 0
                 self.axis_name = 'X'
+                bpy.context.object.modifiers[self.mod_index].use_relative_offset = True
+                bpy.context.object.modifiers[self.mod_index].use_constant_offset = False
                 bpy.context.object.modifiers[self.mod_index].relative_offset_displace[1] = 0
                 bpy.context.object.modifiers[self.mod_index].relative_offset_displace[2] = 0
                 try:
@@ -3994,6 +4001,8 @@ class EmcArrayModal(bpy.types.Operator):
             if event.value == 'PRESS':
                 self.axis_num = 1
                 self.axis_name = 'Y'
+                bpy.context.object.modifiers[self.mod_index].use_relative_offset = True
+                bpy.context.object.modifiers[self.mod_index].use_constant_offset = False
                 bpy.context.object.modifiers[self.mod_index].relative_offset_displace[0] = 0
                 bpy.context.object.modifiers[self.mod_index].relative_offset_displace[2] = 0
                 try:
@@ -4013,8 +4022,15 @@ class EmcArrayModal(bpy.types.Operator):
             if event.value == 'PRESS':
                 self.axis_num = 2
                 self.axis_name = 'Z'
+                if self.instance:
+                    bpy.context.object.modifiers[self.mod_index].use_relative_offset = False
+                    bpy.context.object.modifiers[self.mod_index].use_constant_offset = True
+                    bpy.context.object.modifiers[self.mod_index].constant_offset_displace[0] = 0
+                    bpy.context.object.modifiers[self.mod_index].constant_offset_displace[1] = 0
+
                 bpy.context.object.modifiers[self.mod_index].relative_offset_displace[0] = 0
                 bpy.context.object.modifiers[self.mod_index].relative_offset_displace[1] = 0
+                
                 try:
                     if not self.add_circle:
                         bpy.context.object.modifiers[self.mod_index - 1].direction = 'Z'
@@ -4495,7 +4511,7 @@ class EmcDeformModal(bpy.types.Operator):
 
             bpy.context.view_layer.objects.active = bpy.data.objects[self.obj_main]
 
-            if len(bpy.data.collections['EMC Extras'].objects) == 0:
+            if len(bpy.data.collections['EMC Extras'].objects) == 0 and len(bpy.data.collections['EMC Extras'].children) == 0:
                 bpy.data.collections.remove(bpy.data.collections['EMC Extras'])
             return {'CANCELLED'}
 
