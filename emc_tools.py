@@ -3771,14 +3771,80 @@ class EmcArrayModal(bpy.types.Operator):
     obj_offset: bpy.props.StringProperty()
     obj_mode: bpy.props.StringProperty()
     wires: bpy.props.BoolProperty()
+    instance: bpy.props.BoolProperty()
+    inst_obj: bpy.props.StringProperty()
 
     def modal(self, context, event):
 
         orig_cur_loc = mathutils.Vector.copy(bpy.context.scene.cursor.location)
         orig_cur_rot = mathutils.Euler.copy(bpy.context.scene.cursor.rotation_euler)
 
-        if event.type == 'C':
+        if event.type == 'I':
             if event.value == 'PRESS':
+                if self.add_circle:
+                    self.instance = not self.instance
+                    if self.instance:
+                        bpy.context.scene.cursor.location = bpy.context.active_object.location
+                        bpy.context.scene.cursor.rotation_euler = bpy.context.active_object.rotation_euler
+                        bpy.ops.mesh.primitive_plane_add()
+                        bpy.context.object.name = "EMC Array_Instancer"
+                        bpy.context.object.data.name = "EMC Array_Instancer"
+                        self.inst_obj = bpy.context.active_object.name
+                        bpy.data.objects[self.og_obj].select_set(True)
+                        try:
+                            bpy.data.objects[self.curve].select_set(True)
+                        except:
+                            pass
+                        bpy.context.view_layer.objects.active = bpy.data.objects[self.og_obj]
+
+                        bpy.ops.object.modifier_remove(modifier=bpy.data.objects[self.og_obj].modifiers[-1].name)
+                        if self.add_deform:
+                            bpy.ops.object.modifier_remove(modifier=bpy.data.objects[self.og_obj].modifiers[-1].name)
+                        bpy.context.view_layer.objects.active = bpy.data.objects[self.inst_obj]
+                        bpy.data.objects[self.og_obj].select_set(False)
+
+                        bpy.ops.object.modifier_add(type='ARRAY')
+                        if self.add_deform:
+                            bpy.ops.object.modifier_add(type='CURVE')
+                        
+                            bpy.context.object.modifiers[self.mod_index].fit_type = 'FIT_CURVE'
+                            bpy.context.object.modifiers[self.mod_index].curve = bpy.data.objects[self.curve]
+                            bpy.context.object.modifiers[-1].object = bpy.data.objects[self.curve]
+
+                        bpy.data.objects[self.og_obj].parent = bpy.data.objects[self.inst_obj]
+                        bpy.data.objects[self.og_obj].matrix_parent_inverse = bpy.data.objects[self.inst_obj].matrix_world.inverted()
+
+                        bpy.data.objects[self.inst_obj].instance_type = 'FACES'
+                        bpy.data.objects[self.inst_obj].show_instancer_for_render = False
+                        bpy.data.objects[self.inst_obj].show_instancer_for_viewport = True
+                    else:
+                        bpy.data.objects[self.og_obj].select_set(False)
+                        try:
+                            bpy.data.objects[self.curve].select_set(False)
+                        except:
+                            pass
+                        bpy.data.objects[self.inst_obj].select_set(True)
+                        bpy.context.view_layer.objects.active = bpy.data.objects[self.inst_obj]
+                        bpy.ops.object.delete()
+                        bpy.data.objects[self.og_obj].select_set(True)
+                        try:
+                            bpy.data.objects[self.curve].select_set(True)
+                        except:
+                            pass
+                        bpy.context.view_layer.objects.active = bpy.data.objects[self.og_obj]
+
+                        bpy.ops.object.modifier_add(type='ARRAY')
+                        if self.add_deform:
+                            bpy.ops.object.modifier_add(type='CURVE')
+                            bpy.context.object.modifiers[self.mod_index].fit_type = 'FIT_CURVE'
+                            bpy.context.object.modifiers[self.mod_index].curve = bpy.data.objects[self.curve]
+                            bpy.context.object.modifiers[-1].object = bpy.data.objects[self.curve]
+                else:
+                    self.report({"WARNING"}, "Instancing cannot be enabled if circular array is active. Activate instancing before circular array")
+
+        elif event.type == 'C':
+            if event.value == 'PRESS':
+                the_object = self.inst_obj if self.instance else self.og_obj
                 if len(bpy.context.selected_objects) == 1:
                     if self.init:
                         self.add_circle = True
@@ -3790,10 +3856,10 @@ class EmcArrayModal(bpy.types.Operator):
                         except:
                             pass
 
-                        bpy.data.objects[self.og_obj].select_set(True)
+                        bpy.data.objects[the_object].select_set(True)
                     
 
-                    self.og_obj = bpy.context.active_object.name
+                    the_object = bpy.context.active_object.name
                     modName = bpy.context.object.modifiers[self.mod_index].name
 
                     bpy.context.scene.cursor.location = bpy.context.active_object.location
@@ -3805,7 +3871,7 @@ class EmcArrayModal(bpy.types.Operator):
 
                     self.obj_offset = bpy.context.active_object.name
 
-                    bpy.data.objects[self.obj_offset].parent = bpy.data.objects[self.og_obj]
+                    bpy.data.objects[self.obj_offset].parent = bpy.data.objects[the_object]
 
                     # if bpy.data.objects[self.og_obj].type == "CURVE":
                     #     bpy.data.objects[self.obj_offset].matrix_parent_inverse = bpy.data.objects[self.og_obj].matrix_world.inverted()
@@ -3829,13 +3895,13 @@ class EmcArrayModal(bpy.types.Operator):
                     dr.driver.expression = '(360/var)/(180/pi)'
                     var = dr.driver.variables.new()
                     var.type = 'SINGLE_PROP'
-                    var.targets[0].id = bpy.data.objects[self.og_obj]
+                    var.targets[0].id = bpy.data.objects[the_object]
                     var.targets[0].data_path = 'modifiers["' + modName + '"].count'
 
                     bpy.ops.object.select_all(action='DESELECT')
 
-                    bpy.data.objects[self.og_obj].select_set(True)
-                    bpy.context.view_layer.objects.active = bpy.data.objects[self.og_obj]
+                    bpy.data.objects[the_object].select_set(True)
+                    bpy.context.view_layer.objects.active = bpy.data.objects[the_object]
 
                     if self.add_circle == True:
                         bpy.context.object.modifiers[self.mod_index].use_relative_offset = False
@@ -3866,9 +3932,9 @@ class EmcArrayModal(bpy.types.Operator):
                             bpy.data.objects[self.obj_offset].select_set(True)
                             bpy.ops.object.delete()
 
-                            bpy.data.objects[self.og_obj].select_set(True)
+                            bpy.data.objects[the_object].select_set(True)
 
-                            bpy.context.view_layer.objects.active = bpy.data.objects[self.og_obj]
+                            bpy.context.view_layer.objects.active = bpy.data.objects[the_object]
                             bpy.context.object.modifiers[self.mod_index].use_relative_offset = True
                             bpy.context.object.modifiers[self.mod_index].use_object_offset = False
 
@@ -3994,6 +4060,10 @@ class EmcArrayModal(bpy.types.Operator):
             if event.value == 'PRESS':
                 bpy.context.object.modifiers[self.mod_index].use_merge_vertices_cap = not bpy.context.object.modifiers[self.mod_index].use_merge_vertices_cap
 
+        elif event.type == 'NUMPAD_1' or event.type == 'ONE':
+            if event.value == 'PRESS':
+                bpy.context.object.modifiers[self.mod_index].relative_offset_displace[self.axis_num] = 1
+
         elif event.type in {'MIDDLEMOUSE'}:
             return {'PASS_THROUGH'}
 
@@ -4004,16 +4074,40 @@ class EmcArrayModal(bpy.types.Operator):
             bpy.context.object.show_wire = self.wires
             bpy.context.scene.cursor.location = orig_cur_loc
             bpy.context.scene.cursor.rotation_euler = orig_cur_rot
+            self.add_circle = False
+            self.add_deform = False
             return {'FINISHED'}
 
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
+            if self.instance:
+                bpy.data.objects[self.og_obj].select_set(False)
+                try:
+                    bpy.data.objects[self.curve].select_set(False)
+                except:
+                    pass
+                bpy.data.objects[self.inst_obj].select_set(True)
+                bpy.context.view_layer.objects.active = bpy.data.objects[self.inst_obj]
+                bpy.ops.object.delete()
+                bpy.data.objects[self.og_obj].select_set(True)
+                try:
+                    bpy.data.objects[self.curve].select_set(True)
+                except:
+                    pass
+                bpy.context.view_layer.objects.active = bpy.data.objects[self.og_obj]
+
+                bpy.ops.object.modifier_add(type='ARRAY')
+                if self.add_deform:
+                    bpy.ops.object.modifier_add(type='CURVE')
             bpy.context.object.modifiers[self.mod_index].count = self.count
             bpy.context.object.modifiers[self.mod_index].relative_offset_displace[0] = self.x_factor
             bpy.context.object.modifiers[self.mod_index].relative_offset_displace[1] = self.y_factor
             bpy.context.object.modifiers[self.mod_index].relative_offset_displace[2] = self.z_factor
             bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
             if not self.add_circle:
-                bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+                if self.instance:
+                    pass
+                else:
+                    bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
                 bpy.ops.object.select_all(action='DESELECT')
                 bpy.data.objects[self.obj_offset].select_set(True)
                 bpy.context.view_layer.objects.active = bpy.data.objects[self.obj_offset]
@@ -4028,6 +4122,8 @@ class EmcArrayModal(bpy.types.Operator):
             bpy.context.object.show_wire = self.wires
             bpy.context.scene.cursor.location = orig_cur_loc
             bpy.context.scene.cursor.rotation_euler = orig_cur_rot
+            self.add_circle = False
+            self.add_deform = False
             return {'CANCELLED'}
         try:
             if self.add_deform:
@@ -4041,9 +4137,10 @@ class EmcArrayModal(bpy.types.Operator):
                 "Circular: " + str(not self.add_circle) + " | " +  
                 "Curve Deform: " + str(self.add_deform) + " | " +  
                 "Merge: " + str(bpy.context.object.modifiers[self.mod_index].use_merge_vertices) + " | " +  
-                "First Last: " + str(bpy.context.object.modifiers[self.mod_index].use_merge_vertices_cap)
+                "First Last: " + str(bpy.context.object.modifiers[self.mod_index].use_merge_vertices_cap) + " | " +
+                "Instance: " + str(self.instance)
             )
-            bpy.types.WorkSpace.status_text_set_internal("MMB Scroll/ Page U/D: Count | X/Y/Z: Set Axis | C: Circular Array | D: Curve Deform | M: Merge Vertices | F: First Last | Q: Toggle Wireframe")
+            bpy.types.WorkSpace.status_text_set_internal("MMB Scroll/ Page U/D: Count | X/Y/Z: Set Axis | C: Circular Array | D: Curve Deform | M: Merge Vertices | F: First Last | Q: Toggle Wireframe | I: Instance | 1: Set Strength to 1")
         except:
             pass
         return {'RUNNING_MODAL'}
@@ -4058,6 +4155,8 @@ class EmcArrayModal(bpy.types.Operator):
         self.og_mode = bpy.context.object.mode
         self.wires = bpy.context.object.show_wire
         self.mod_index = -1
+        self.instance = False
+        self.og_obj = bpy.context.active_object.name
 
         bpy.ops.object.mode_set (mode = 'OBJECT')
 
