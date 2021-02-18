@@ -2303,9 +2303,25 @@ class EMCbool(bpy.types.Operator):
             bpy.context.object.modifiers[-1].operand_type = 'COLLECTION'
             bpy.context.object.modifiers[-1].show_expanded = False
 
+            try:
+                og_exclude = bpy.context.view_layer.layer_collection.children["EMC Extras"].exclude
+                og_hide = bpy.context.view_layer.layer_collection.children["EMC Extras"].hide_viewport
+                og_viewport = bpy.context.scene.collection.children['EMC Extras'].hide_viewport
+
+                if bpy.context.view_layer.layer_collection.children["EMC Extras"].exclude == True:
+                    bpy.context.view_layer.layer_collection.children["EMC Extras"].exclude = False
+
+                if bpy.context.view_layer.layer_collection.children["EMC Extras"].hide_viewport == True:
+                    bpy.context.view_layer.layer_collection.children["EMC Extras"].hide_viewport = False
+
+                if bpy.context.scene.collection.children['EMC Extras'].hide_viewport == True:
+                    bpy.context.scene.collection.children['EMC Extras'].hide_viewport = False
+            except:
+                pass
+
             for i in selected:
                 move_to_col(i, "EMC Extras", True, True)
-                
+
             current_col = bpy.context.view_layer.active_layer_collection
             bpy.context.view_layer.active_layer_collection = bpy.context.view_layer.layer_collection.children['EMC Extras']
 
@@ -2331,6 +2347,13 @@ class EMCbool(bpy.types.Operator):
                 i.matrix_parent_inverse = active.matrix_world.inverted()
 
             bpy.context.object.modifiers[-1].collection = bpy.data.collections[colnameget]
+
+            try:
+                bpy.context.view_layer.layer_collection.children["EMC Extras"].exclude = og_exclude
+                bpy.context.view_layer.layer_collection.children["EMC Extras"].hide_viewport = og_hide
+                bpy.context.scene.collection.children['EMC Extras'].hide_viewport = og_viewport
+            except:
+                pass
 
             if self.operation == "diff":
                 bpy.context.object.modifiers[-1].operation = 'DIFFERENCE'
