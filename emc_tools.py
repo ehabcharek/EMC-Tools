@@ -2131,17 +2131,43 @@ class EmcRepeat(bpy.types.Operator):
         default = False
     )
 
+    per_obj: bpy.props.BoolProperty(
+        name = "Per Object", 
+        description = "Run per each selected object", 
+        default = False
+    )
+
     def execute(self, context):
-        try:
+        if self.per_obj:
+            if bpy.context.object.mode != 'OBJECT':
+                self.report({"WARNING"}, "This option is only available in object mode")
+            else:
+                for i in bpy.context.selected_objects:
+                    bpy.ops.object.select_all(action='DESELECT')
+                    i.select_set(True)
+                    bpy.context.view_layer.objects.active = i
+                    if self.script == True:
+                        script = bpy.data.texts[self.operation]
+                        for i in range(0, self.repeat):
+                            exec(script.as_string())
+                    else:
+                        try:
+                            for i in range(0, self.repeat):
+                                exec(self.operation)
+                        except:
+                            self.report({"WARNING"}, "Invalid Code")
+        else:
             if self.script == True:
                 script = bpy.data.texts[self.operation]
                 for i in range(0, self.repeat):
                     exec(script.as_string())
             else:
-                for i in range(0, self.repeat):
-                    exec(self.operation)
-        except:
-            self.report({"WARNING"}, "Invalid Code")
+                try:
+                    for i in range(0, self.repeat):
+                        exec(self.operation)
+                except:
+                    self.report({"WARNING"}, "Invalid Code")
+                
         return{'FINISHED'}
 
 class Reset(bpy.types.Operator):
