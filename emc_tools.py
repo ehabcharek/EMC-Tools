@@ -2138,11 +2138,14 @@ class EmcRepeat(bpy.types.Operator):
     )
 
     def execute(self, context):
+        selected = bpy.context.selected_objects
+        active = bpy.context.view_layer.objects.active
+
         if self.per_obj:
             if bpy.context.object.mode != 'OBJECT':
                 self.report({"WARNING"}, "This option is only available in object mode")
             else:
-                for i in bpy.context.selected_objects:
+                for i in selected:
                     bpy.ops.object.select_all(action='DESELECT')
                     i.select_set(True)
                     bpy.context.view_layer.objects.active = i
@@ -2156,6 +2159,10 @@ class EmcRepeat(bpy.types.Operator):
                                 exec(self.operation)
                         except:
                             self.report({"WARNING"}, "Invalid Code")
+                for i in selected:
+                    i.select_set(True)
+                bpy.context.view_layer.objects.active = active
+
         else:
             if self.script == True:
                 script = bpy.data.texts[self.operation]
