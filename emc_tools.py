@@ -1614,6 +1614,18 @@ class SmoothFaces(bpy.types.Operator):
         default = True,
     )
 
+    dissolve1: bpy.props.BoolProperty(
+        name = "Pre-Dissolve Method", 
+        description = "True = Limited Dissolve, False = Edge Dissolve. Dissolve method used on the first pass", 
+        default = False,
+    )
+
+    dissolve2: bpy.props.BoolProperty(
+        name = "Post-Dissolve Method", 
+        description = "True = Limited Dissolve, False = Edge Dissolve. Dissolve method used on the second pass. Only applicable if Cleanup is enabled", 
+        default = False,
+    )
+
     slow: bpy.props.BoolProperty(
         name = "Match Modifier (Slow)", 
         description = "Subdivisions match the modifier subdivisions, but this option is much slower", 
@@ -1652,13 +1664,18 @@ class SmoothFaces(bpy.types.Operator):
         for i in bm.verts:
             if i not in init_verts:
                 poke_verts.append(i)
+        bpy.ops.mesh.select_all(action='DESELECT')
+        bpy.ops.object.face_map_select()
         bpy.ops.mesh.poke()
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.context.object.vertex_groups.active_index = len(bpy.context.object.vertex_groups)-2
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.ops.object.vertex_group_select()
         bpy.context.tool_settings.mesh_select_mode = (False, True, False)
-        bpy.ops.mesh.dissolve_mode(use_verts=False, use_face_split=False, use_boundary_tear=False)
+        if self.dissolve1:
+            bpy.ops.mesh.dissolve_limited()
+        else:
+            bpy.ops.mesh.dissolve_mode(use_verts=False, use_face_split=False, use_boundary_tear=False)
         bpy.ops.object.vertex_group_remove(all=False, all_unlocked=False)
         bpy.context.object.vertex_groups.active_index = len(bpy.context.object.vertex_groups)-1
         bpy.ops.object.vertex_group_select()
@@ -1676,7 +1693,10 @@ class SmoothFaces(bpy.types.Operator):
             try:
                 # bpy.ops.mesh.select_similar(type='COPLANAR', threshold=0.01)
                 bpy.ops.object.face_map_deselect()
-                bpy.ops.mesh.dissolve_mode(use_verts=False, use_face_split=False, use_boundary_tear=True)
+                if self.dissolve2:
+                    bpy.ops.mesh.dissolve_limited()
+                else:
+                    bpy.ops.mesh.dissolve_mode(use_verts=False, use_face_split=False, use_boundary_tear=False)
             except:
                 pass
         
