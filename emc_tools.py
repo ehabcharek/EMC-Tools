@@ -1027,6 +1027,12 @@ class Mobius(bpy.types.Operator):
         default = 0.05,
         min = 0.001,
         )
+
+    apply: bpy.props.BoolProperty(
+        name = "Apply Modifiers",
+        description = "Create Primitive Non-Destructively if Disabled. NOTE: Inside geometry will have to be deleted manually!",
+        default = True,
+    )
       
     def execute(self, context):
         bpy.ops.mesh.primitive_vert_add()
@@ -1062,13 +1068,14 @@ class Mobius(bpy.types.Operator):
         bpy.context.object.modifiers["Displace"].direction = 'Y'
         bpy.context.object.modifiers["Displace"].strength = -(y_dimension-0.5)
 
-        bpy.ops.object.convert(target='MESH')
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.context.tool_settings.mesh_select_mode = (True, False, False)
-        bpy.ops.mesh.select_all(action='DESELECT')
-        bpy.ops.mesh.select_non_manifold()
-        bpy.ops.mesh.delete(type='FACE')
-        bpy.ops.object.mode_set(mode='OBJECT')
+        if self.apply:
+            bpy.ops.object.convert(target='MESH')
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.context.tool_settings.mesh_select_mode = (True, False, False)
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.mesh.select_non_manifold()
+            bpy.ops.mesh.delete(type='FACE')
+            bpy.ops.object.mode_set(mode='OBJECT')
         bpy.context.object.data.use_auto_smooth = True
 
         bpy.context.object.name = "EMC Mobius Strip"
@@ -2170,9 +2177,12 @@ class EmcRepeat(bpy.types.Operator):
                     i.select_set(True)
                     bpy.context.view_layer.objects.active = i
                     if self.script == True:
-                        script = bpy.data.texts[self.operation]
-                        for i in range(0, self.repeat):
-                            exec(script.as_string())
+                        try:
+                            script = bpy.data.texts[self.operation]
+                            for i in range(0, self.repeat):
+                                exec(script.as_string())
+                        except Exception as e:
+                            self.report({"ERROR"}, str(e))
                     else:
                         try:
                             for i in range(0, self.repeat):
@@ -2185,9 +2195,12 @@ class EmcRepeat(bpy.types.Operator):
 
         else:
             if self.script == True:
-                script = bpy.data.texts[self.operation]
-                for i in range(0, self.repeat):
-                    exec(script.as_string())
+                try:
+                    script = bpy.data.texts[self.operation]
+                    for i in range(0, self.repeat):
+                        exec(script.as_string())
+                except Exception as e:
+                    self.report({"ERROR"}, str(e))
             else:
                 try:
                     for i in range(0, self.repeat):
