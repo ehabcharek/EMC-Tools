@@ -4813,10 +4813,15 @@ class EmcWeightedNormals(bpy.types.Operator):
     
     def execute(self, context):
         og = bpy.context.selected_objects
+        active = bpy.context.view_layer.objects.active
         sharp = False
         mode = 'FACE_AREA_WITH_ANGLE'
 
         for obj in og:
+            bpy.ops.object.select_all(action='DESELECT')
+            obj.select_set(True)
+            bpy.context.view_layer.objects.active = obj
+
             for modifier in obj.modifiers:
                 if modifier.type == 'BEVEL':
                     modifier.harden_normals = False
@@ -4824,12 +4829,17 @@ class EmcWeightedNormals(bpy.types.Operator):
                     sharp = modifier.keep_sharp
                     mode = modifier.mode
                     bpy.ops.object.modifier_remove(modifier=modifier.name)
+
+            bpy.ops.object.modifier_add(type='WEIGHTED_NORMAL')
+            bpy.context.object.modifiers[-1].keep_sharp = sharp
+            bpy.context.object.modifiers[-1].mode = mode
+            bpy.context.object.data.use_auto_smooth = True
+            bpy.ops.object.shade_smooth()
+            bpy.context.object.modifiers[-1].show_expanded = False
         
-        bpy.ops.object.modifier_add(type='WEIGHTED_NORMAL')
-        bpy.context.object.modifiers[-1].keep_sharp = sharp
-        bpy.context.object.modifiers[-1].mode = mode
-        bpy.context.object.data.use_auto_smooth = True
-        bpy.context.object.modifiers[-1].show_expanded = False
+        for obj in og:
+            obj.select_set(True)
+        bpy.context.view_layer.objects.active = active
 
         return{'FINISHED'}
 
