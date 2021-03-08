@@ -135,34 +135,87 @@ class VIEW3D_MT_EmcModifiers(Menu):
 
         pie = layout.menu_pie()
 
-        pie.operator("emc.arraymod", icon='MOD_ARRAY')
-        pie.operator("emc.bevelmod", icon='MOD_BEVEL')
-        pie.operator("emc.screwmod", icon='MOD_SCREW')
-        pie.operator("emc.solidifymod", icon='MOD_SOLIDIFY')
-        pie.operator("emc.weightmod", icon='MOD_NORMALEDIT')
-        pie.operator("object.modifier_add", text='Add Weld Modifier', icon = "AUTOMERGE_OFF").type='WELD'
-        pie.operator("emc.deformmod", icon='MOD_SIMPLEDEFORM')
-        pie.operator("emc.displacemod", icon='MOD_DISPLACE')
+        if bpy.context.active_object.type == 'MESH' or bpy.context.active_object.type == 'CURVE' or bpy.context.active_object.type == 'SURFACE' or bpy.context.active_object.type == 'FONT':
+            
+            pie.operator("emc.arraymod", icon='MOD_ARRAY')
+            pie.operator("emc.bevelmod", icon='MOD_BEVEL')
+            pie.operator("emc.screwmod", icon='MOD_SCREW')
+            pie.operator("emc.solidifymod", icon='MOD_SOLIDIFY')
 
-        pie.separator()
-        pie.separator()
-        other = pie.column()
-        gap = other.column()
-        gap.separator()
-        gap.scale_y = 7
-        other_menu = other.column()
+            if bpy.context.active_object.type == 'MESH':
+                pie.operator("emc.weightmod", icon='MOD_NORMALEDIT')
+            else:
+                pie = pie.row()
+                pie.label(text='')
+                pie = layout.menu_pie()
 
-        other_menu.operator("emc.mirror", icon = "MOD_MIRROR").existing = False
-        other_menu.operator("object.modifier_add", text='SubD Surface', icon = "MOD_SUBSURF").type='SUBSURF'
-        other_menu.operator('wm.call_menu_pie', text='EMC Boolean', icon='MOD_BOOLEAN').name="emc.boolmenu"
-        other_menu.operator("emc.addmod", text = "Decimate", icon = "MOD_DECIM").modifier = 'DECIMATE'
-        other_menu.operator("emc.addmod", text = "Data Transfer", icon = "MOD_DATA_TRANSFER").modifier = 'DATA_TRANSFER'
-        other_menu.operator("emc.addmod", text = "Shrinkwrap", icon = "MOD_SHRINKWRAP").modifier = 'SHRINKWRAP'
-        other_menu.operator("emc.addmod", text = "Mesh Deform", icon = "MOD_MESHDEFORM").modifier = 'MESH_DEFORM'
-        other_menu.operator("emc.addmod", text = "Triangulate", icon = "MOD_TRIANGULATE").modifier = 'TRIANGULATE'
-        other_menu.operator("emc.addmod", text = "Vertex Weight Edit", icon = "MOD_VERTEX_WEIGHT").modifier = 'VERTEX_WEIGHT_EDIT'
-        other_menu.operator("object.modifier_add", text='Remesh', icon = "MOD_REMESH").type='REMESH'
-        other_menu.operator("emc.addmod", text = "Cast", icon = "MOD_CAST").modifier = 'CAST'
+            pie.operator("object.modifier_add", text='Add Weld Modifier', icon = "AUTOMERGE_OFF").type='WELD'
+            pie.operator("emc.deformmod", icon='MOD_SIMPLEDEFORM')
+            if bpy.context.active_object.type == 'MESH':
+                pie.operator("emc.displacemod", icon='MOD_DISPLACE')
+            else:
+                pie = pie.row()
+                pie.label(text='')
+                pie = layout.menu_pie()
+
+            pie.separator()
+            pie.separator()
+            other = pie.column()
+            gap = other.column()
+            gap.separator()
+            gap.scale_y = 7
+            other_menu = other.column()
+
+            other_menu.operator("emc.mirror", icon = "MOD_MIRROR").existing = False
+            other_menu.operator("object.modifier_add", text='SubD Surface', icon = "MOD_SUBSURF").type='SUBSURF'
+
+            if bpy.context.active_object.type == 'MESH':
+                other_menu.operator('wm.call_menu_pie', text='EMC Boolean', icon='MOD_BOOLEAN').name="emc.boolmenu"
+            else:
+                pie = pie.row()
+                pie.label(text='')
+                pie = layout.menu_pie()
+
+            other_menu.operator("emc.addmod", text = "Decimate", icon = "MOD_DECIM").modifier = 'DECIMATE'
+
+            if bpy.context.active_object.type == 'MESH':
+                other_menu.operator("emc.addmod", text = "Data Transfer", icon = "MOD_DATA_TRANSFER").modifier = 'DATA_TRANSFER'
+            else:
+                pie = pie.row()
+                pie.label(text='')
+                pie = layout.menu_pie()
+
+            other_menu.operator("emc.addmod", text = "Shrinkwrap", icon = "MOD_SHRINKWRAP").modifier = 'SHRINKWRAP'
+            other_menu.operator("emc.addmod", text = "Mesh Deform", icon = "MOD_MESHDEFORM").modifier = 'MESH_DEFORM'
+            other_menu.operator("emc.addmod", text = "Triangulate", icon = "MOD_TRIANGULATE").modifier = 'TRIANGULATE'
+
+            if bpy.context.active_object.type == 'MESH':
+                other_menu.operator("emc.addmod", text = "Vertex Weight Edit", icon = "MOD_VERTEX_WEIGHT").modifier = 'VERTEX_WEIGHT_EDIT'
+            else:
+                pie = pie.row()
+                pie.label(text='')
+                pie = layout.menu_pie()
+                
+            other_menu.operator("object.modifier_add", text='Remesh', icon = "MOD_REMESH").type='REMESH'
+            other_menu.operator("emc.addmod", text = "Cast", icon = "MOD_CAST").modifier = 'CAST'
+
+        else:
+
+            pie = pie.row()
+            pie.label(text='')
+            pie = layout.menu_pie()
+
+            pie = pie.row()
+            pie.label(text='')
+            pie = layout.menu_pie()
+
+            pie = pie.row()
+            pie.label(text='')
+            pie = layout.menu_pie()
+
+            pie.operator("emc.null", text='Object type not supported or has no modifiers', icon='ERROR')
+
+            
 
 class VIEW3D_MT_Extras(Menu):
     bl_label = "EMC Extras"
@@ -3780,7 +3833,10 @@ class EmcBevelModal(bpy.types.Operator):
         self.mods_with_bevel = 0
         mod_temp_loc = 0
 
-        bpy.context.object.data.use_auto_smooth = True
+        try:
+            bpy.context.object.data.use_auto_smooth = True
+        except:
+            pass
         bpy.context.object.show_wire = True
 
         if bpy.context.object.mode == 'EDIT':
@@ -4464,7 +4520,10 @@ class EmcScrewModal(bpy.types.Operator):
         self.init = True
         self.wires = bpy.context.object.show_wire
 
-        bpy.context.object.data.use_auto_smooth = True
+        try:
+            bpy.context.object.data.use_auto_smooth = True
+        except:
+            pass
         bpy.context.object.show_wire = True
 
         if bpy.context.object.mode == 'EDIT':
