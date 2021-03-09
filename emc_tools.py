@@ -108,6 +108,15 @@ class VIEW3D_MT_customMenu(Menu):
     bl_options = {'REGISTER', 'UNDO'}
 
     def draw(self, context):
+
+        exists = False
+        
+        try:
+            print(bpy.data.materials["Vertex Group Gradient"].name + " exists!")
+            exists = True
+        except:
+            exists = False
+
         layout = self.layout
 
         pie = layout.menu_pie()
@@ -124,6 +133,8 @@ class VIEW3D_MT_customMenu(Menu):
         elif bpy.context.object.mode == 'OBJECT':
             pie.operator("emc.cage", icon='FILE_3D')
             pie.operator("emc.purge", icon='CANCEL')
+            if exists:
+                pie.operator("emc.vg_view", icon='NODETREE')
         
 class VIEW3D_MT_EmcModifiers(Menu):
     bl_label = "EMC Modifiers Menu"
@@ -5415,6 +5426,81 @@ class SelLinked(bpy.types.Operator):
             bpy.ops.mesh.select_linked(delimit={'NORMAL'})
         return{'FINISHED'}
 
+class ViewGroup(bpy.types.Operator):
+    """Views a vertex group in render"""
+    bl_label = "Vertex Group Preview"
+    bl_idname = "emc.vg_view"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    del_prev: bpy.props.BoolProperty(
+        name = "Delete Previous", 
+        description = "Delete all previous instances", 
+        default = True
+    )
+
+    sel_mod_ver: bpy.props.BoolProperty(
+        name = "Use active modifier's vertex group", 
+        description = "True = Use active modifier's vertex group. False = Use most recent vertex group", 
+        default = True
+    )
+
+    def execute(self, context):
+        self_added = False
+        existing = False
+        start = -1
+        active = bpy.context.active_object.modifiers.active.name
+
+        if len(bpy.context.active_object.data.vertex_colors) == 0:
+            bpy.ops.mesh.vertex_color_add()
+            bpy.context.active_object.data.vertex_colors[-1].name = "EMC Weight Gradient"
+            self_added = True
+            existing = True
+
+        if self_added == False:
+            for i in bpy.context.active_object.data.vertex_colors:
+                if i.name.split('.')[0] == "EMC Weight Gradient":
+                    existing = True
+
+        if not existing:
+            bpy.ops.mesh.vertex_color_add()    
+            bpy.context.active_object.data.vertex_colors[-1].name = "EMC Weight Gradient"
+
+        if self.del_prev:
+            for i in bpy.context.active_object.modifiers:
+                if i.type == 'NODES':
+                    if i.node_group == bpy.data.node_groups['Vertex Weight Gradient']:
+                        bpy.ops.object.modifier_remove(modifier=i.name)
+
+        for mod in bpy.context.active_object.modifiers:
+            start += 1
+            if mod.name == active:
+                break
+
+        bpy.ops.object.modifier_add(type='NODES')
+        bpy.context.active_object.modifiers[-1].node_group = bpy.data.node_groups['Vertex Weight Gradient']
+        bpy.context.active_object.modifiers[-1]["Input_5"] = bpy.context.active_object.modifiers[start].vertex_group if self.sel_mod_ver else bpy.context.active_object.vertex_groups[-1].name
+        bpy.context.active_object.modifiers[-1]["Input_7"] = bpy.context.object.data.vertex_colors[-1].name
+
+        bpy.ops.object.modifier_move_to_index(modifier=bpy.context.active_object.modifiers[-1].name, index=start+1)
+
+        if len(bpy.context.active_object.material_slots) == 0:
+            bpy.ops.object.material_slot_add()
+
+        for i in bpy.context.active_object.material_slots:
+            if i.name == 'Vertex Group Gradient':
+                break
+            else:
+                if i.name == '':
+                    bpy.ops.object.material_slot_remove()
+                bpy.ops.object.material_slot_add()
+                bpy.context.active_object.material_slots[-1].material = bpy.data.materials['Vertex Group Gradient']
+                try:
+                    bpy.ops.material.materialutilities_slot_move(movement='TOP')
+                except:
+                    pass
+                bpy.data.materials["Vertex Group Gradient"].node_tree.nodes["Attribute"].attribute_name = bpy.context.object.data.vertex_colors[-1].name
+        return{'FINISHED'}
+
 
 class AddModifierCustom(bpy.types.Operator):
     """Add various modifiers with some custom default parameters set"""
@@ -6060,6 +6146,7 @@ classes = (
     Purge,
     CustomNormals,
     SelLinked,
+    ViewGroup,
 )
 
 addon_keymaps = []
