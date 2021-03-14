@@ -2320,6 +2320,19 @@ class FaceMapsMaterial(bpy.types.Operator):
     bl_idname = "emc.facemapmaterial"
     bl_options = {'REGISTER', 'UNDO'}
 
+    reverse: bpy.props.BoolProperty(
+        name = "Reverse", 
+        description = "Assign faces from face sets TO materials based on names'", 
+        default = False,
+    )
+
+    remove: bpy.props.BoolProperty(
+        name = "Remove 'Vertex Group Gradient'", 
+        description = "Removes any material called 'Vertex Group Gradient'. Don't worry about this, as this is used by this addon internally", 
+        default = True,
+    )
+
+
     def execute(self, context):
         orig_mode = bpy.context.object.mode
         orig_len = len(bpy.context.object.face_maps)
@@ -2333,13 +2346,29 @@ class FaceMapsMaterial(bpy.types.Operator):
 
         bpy.ops.mesh.select_all(action='DESELECT')
 
+        
         for i in range(0, len(bpy.context.object.material_slots)):
-            bpy.ops.object.face_map_add()
+
             bpy.context.object.active_material_index = i
-            bpy.ops.object.material_slot_select()
-            bpy.ops.object.face_map_assign()
-            bpy.context.object.face_maps[i+orig_len].name = bpy.context.object.active_material.name
-            bpy.ops.mesh.select_all(action='DESELECT')
+
+            if bpy.context.active_object.active_material.name == 'Vertex Group Gradient':
+                if self.remove:
+                    bpy.ops.object.editmode_toggle()
+                    bpy.ops.object.material_slot_remove()
+                    bpy.ops.object.editmode_toggle()
+                pass
+
+            else:
+                if self.reverse:
+                    bpy.context.active_object.face_maps.active_index = i
+                    bpy.ops.object.face_map_select()
+                    bpy.ops.object.material_slot_assign()
+                else:
+                    bpy.ops.object.face_map_add()
+                    bpy.ops.object.material_slot_select()
+                    bpy.ops.object.face_map_assign()
+                    bpy.context.object.face_maps[i+orig_len].name = bpy.context.object.active_material.name
+                bpy.ops.mesh.select_all(action='DESELECT')
             
         bpy.ops.object.vertex_group_select()
         bpy.ops.object.vertex_group_remove(all=False, all_unlocked=False)
@@ -4886,6 +4915,7 @@ class EmcWeightedNormals(bpy.types.Operator):
         active = bpy.context.view_layer.objects.active
         sharp = False
         mode = 'FACE_AREA_WITH_ANGLE'
+        og_mod = ''
 
         for obj in og:
             bpy.ops.object.select_all(action='DESELECT')
@@ -4896,16 +4926,17 @@ class EmcWeightedNormals(bpy.types.Operator):
                 if modifier.type == 'BEVEL':
                     modifier.harden_normals = False
                 elif modifier.type == 'WEIGHTED_NORMAL':
-                    sharp = modifier.keep_sharp
-                    mode = modifier.mode
-                    bpy.ops.object.modifier_remove(modifier=modifier.name)
+                    og_mod = modifier.name
 
-            bpy.ops.object.modifier_add(type='WEIGHTED_NORMAL')
-            bpy.context.object.modifiers[-1].keep_sharp = sharp
-            bpy.context.object.modifiers[-1].mode = mode
-            bpy.context.object.data.use_auto_smooth = True
-            bpy.ops.object.shade_smooth()
-            bpy.context.object.modifiers[-1].show_expanded = False
+            if og_mod == '':
+                bpy.ops.object.modifier_add(type='WEIGHTED_NORMAL')
+                bpy.context.object.modifiers[-1].keep_sharp = sharp
+                bpy.context.object.modifiers[-1].mode = mode
+                bpy.context.object.data.use_auto_smooth = True
+                bpy.ops.object.shade_smooth()
+                bpy.context.object.modifiers[-1].show_expanded = False
+            else:
+                bpy.ops.object.modifier_move_to_index(modifier=og_mod, index=len(bpy.context.active_object.modifiers)-1)
         
         for obj in og:
             obj.select_set(True)
@@ -5448,7 +5479,13 @@ class ViewGroup(bpy.types.Operator):
         self_added = False
         existing = False
         start = -1
-        active = bpy.context.active_object.modifiers.active.name
+        make_face_maps = False
+
+        if len(bpy.context.active_object.modifiers) > 0:
+            active = bpy.context.active_object.modifiers.active.name
+        else:
+            active = ''
+            self.sel_mod_ver = False
 
         if len(bpy.context.active_object.data.vertex_colors) == 0:
             bpy.ops.mesh.vertex_color_add()
@@ -5476,13 +5513,6 @@ class ViewGroup(bpy.types.Operator):
             if mod.name == active:
                 break
 
-        bpy.ops.object.modifier_add(type='NODES')
-        bpy.context.active_object.modifiers[-1].node_group = bpy.data.node_groups['Vertex Weight Gradient']
-        bpy.context.active_object.modifiers[-1]["Input_5"] = bpy.context.active_object.modifiers[start].vertex_group if self.sel_mod_ver else bpy.context.active_object.vertex_groups[-1].name
-        bpy.context.active_object.modifiers[-1]["Input_7"] = bpy.context.object.data.vertex_colors[-1].name
-
-        bpy.ops.object.modifier_move_to_index(modifier=bpy.context.active_object.modifiers[-1].name, index=start+1)
-
         if len(bpy.context.active_object.material_slots) == 0:
             bpy.ops.object.material_slot_add()
 
@@ -5494,11 +5524,35 @@ class ViewGroup(bpy.types.Operator):
                     bpy.ops.object.material_slot_remove()
                 bpy.ops.object.material_slot_add()
                 bpy.context.active_object.material_slots[-1].material = bpy.data.materials['Vertex Group Gradient']
-                try:
-                    bpy.ops.material.materialutilities_slot_move(movement='TOP')
-                except:
-                    pass
                 bpy.data.materials["Vertex Group Gradient"].node_tree.nodes["Attribute"].attribute_name = bpy.context.object.data.vertex_colors[-1].name
+                make_face_maps = True
+
+        if make_face_maps:
+            bpy.ops.emc.facemapmaterial(reverse=False, remove=False)
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='SELECT')
+            # bpy.context.object.active_material_index = len(bpy.context.active_object.material_slots) -1
+            bpy.ops.object.material_slot_assign()
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+
+        if len(bpy.context.object.vertex_groups) == 0:
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.object.vertex_group_add()
+            bpy.context.scene.tool_settings.vertex_group_weight = 1
+            bpy.ops.object.vertex_group_assign()
+            bpy.context.object.vertex_groups[-1].name = "EMC Vertex Group"
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+        bpy.ops.object.modifier_add(type='NODES')
+        bpy.context.active_object.modifiers[-1].node_group = bpy.data.node_groups['Vertex Weight Gradient']
+        bpy.context.active_object.modifiers[-1]["Input_5"] = bpy.context.active_object.modifiers[start].vertex_group if self.sel_mod_ver else bpy.context.active_object.vertex_groups[-1].name
+        bpy.context.active_object.modifiers[-1]["Input_7"] = bpy.context.object.data.vertex_colors[-1].name
+
+        bpy.ops.object.modifier_move_to_index(modifier=bpy.context.active_object.modifiers[-1].name, index=start+1)
+
+        
         return{'FINISHED'}
 
 
