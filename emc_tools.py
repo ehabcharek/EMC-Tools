@@ -28,7 +28,7 @@ bl_info = {
     "warning": "WIP"
 }
 
-import bpy, bmesh, math, mathutils, addon_utils
+import bpy, bmesh, math, mathutils, addon_utils, traceback
 from bpy.types import Menu, Operator
 from rna_prop_ui import rna_idprop_ui_prop_get
 
@@ -2245,8 +2245,10 @@ class EmcRepeat(bpy.types.Operator):
                             script = bpy.data.texts[self.operation]
                             for i in range(0, self.repeat):
                                 exec(script.as_string())
-                        except Exception as e:
-                            self.report({"ERROR"}, str(e))
+                        # except Exception as e:
+                        #     self.report({"ERROR"}, str(e))
+                        except:
+                            self.report({"ERROR"}, traceback.format_exc())
                     else:
                         try:
                             for i in range(0, self.repeat):
@@ -2263,8 +2265,8 @@ class EmcRepeat(bpy.types.Operator):
                     script = bpy.data.texts[self.operation]
                     for i in range(0, self.repeat):
                         exec(script.as_string())
-                except Exception as e:
-                    self.report({"ERROR"}, str(e))
+                except:
+                    self.report({"ERROR"}, traceback.format_exc())
             else:
                 try:
                     for i in range(0, self.repeat):
