@@ -1977,7 +1977,10 @@ class EmcHoleLoop(bpy.types.Operator):
         try:
             bpy.context.tool_settings.mesh_select_mode = (True, False, False)
             bpy.ops.mesh.edge_face_add()
-            bpy.ops.mesh.bevel(offset=self.slide, offset_pct=self.slide, segments=2, profile=1, vertex_only=False, loop_slide=self.loopslide, clamp_overlap=self.clamp)
+            if int_version > 283:
+                bpy.ops.mesh.bevel(offset=self.slide, offset_pct=self.slide, segments=2, profile=1, affect='EDGES', loop_slide=self.loopslide, clamp_overlap=self.clamp)
+            else:
+                bpy.ops.mesh.bevel(offset=self.slide, offset_pct=self.slide, segments=2, profile=1, vertex_only=False, loop_slide=self.loopslide, clamp_overlap=self.clamp)
             bpy.context.tool_settings.mesh_select_mode = (False, False, True)
             bpy.ops.mesh.select_less(use_face_step=False)
             bpy.ops.mesh.delete(type='FACE')
@@ -5315,10 +5318,11 @@ class BuildCorner(bpy.types.Operator):
         bpy.ops.mesh.select_more(use_face_step=True)
             
         bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
+        bpy.ops.mesh.tris_convert_to_quads(face_threshold=(self.angle * (math.pi/180)), shape_threshold=(self.o_angle * (math.pi/180)))
         bpy.ops.mesh.select_less(use_face_step=False)
         bpy.ops.mesh.vertices_smooth(factor=1)
         bpy.ops.mesh.select_more(use_face_step=True)
-        bpy.ops.mesh.tris_convert_to_quads(face_threshold=(self.angle * (math.pi/180)), shape_threshold=(self.o_angle * (math.pi/180)))
+        
 
         bpy.ops.mesh.select_less(use_face_step=False)
 
