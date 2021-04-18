@@ -34,7 +34,10 @@ from rna_prop_ui import rna_idprop_ui_prop_get
 
 
 version = bpy.app.version
-int_version = int(str(version[0])+str(version[1]))
+if version[1] == 0:
+    int_version = int(str(version[0])+str(version[1])+str(version[2]))
+else:
+    int_version = int(str(version[0])+str(version[1]))
 
 def bmesh_vert_active(bm):
     if bm.select_history:
@@ -4006,7 +4009,7 @@ class EmcArrayModal(bpy.types.Operator):
 
                         bpy.data.objects[self.inst_obj].instance_type = 'FACES'
                         bpy.data.objects[self.inst_obj].show_instancer_for_render = False
-                        bpy.data.objects[self.inst_obj].show_instancer_for_viewport = True
+                        bpy.data.objects[self.inst_obj].show_instancer_for_viewport = False
                     else:
                         bpy.data.objects[self.og_obj].select_set(False)
                         try:
