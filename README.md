@@ -1,7 +1,7 @@
 # EMC Tools
 ## NOTE: you ONLY need to download emc_tools.py. Don't download as ZIP!
 
-![thumbnail](https://static-2.gumroad.com/res/gumroad/3574851046664/asset_previews/942a27720490e880a2d9d86b1e4e9d02/retina/thumbnail.png)
+![thumbnail](https://public-files.gumroad.com/variants/z5hpq8yzizdc70teszaxu0ipe74y/3298c3eb001bbed90f1d616da66708480096a0a1b6e81bd4f8a2d6e9b831d301)
 
 *Works on versions 2.83 all the way up to 2.91.*
 
