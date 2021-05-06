@@ -6077,6 +6077,48 @@ class KeyframeDel(bpy.types.Operator):
         bpy.ops.graph.delete()
         return{'FINISHED'}
 
+class ToggleColSpc(bpy.types.Operator):
+    """Toggle Color Space of selected image texture nodes"""
+    bl_label = "Toggle Color Space"
+    bl_idname = "emc.togglecolspc"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    toggle: bpy.props.EnumProperty(
+        name="Change Type",
+        items=(("toggle", "Toggle", "Toggle between sRGB and Linear"),
+               ("set", "Set", "Set to a specific Color Space")),
+        description="Replace or toggle the Color Space",
+        default='toggle'
+        )
+
+    options: bpy.props.EnumProperty(
+        name="Options",
+        items=(("Filmic Log", "Filmic Log", "Set Color Space to Filmic Log"),
+               ("Linear", "Linear", "Set Color Space to Linear"),
+               ("Linear ACES", "Linear ACES", "Set Color Space to Linear ACES"),
+               ("Non-Color", "Non-Color", "Set Color Space to Non-Color"),
+               ("Raw", "Raw", "Set Color Space to Raw"),
+               ("sRGB", "sRGB", "Set Color Space to sRGB"),
+               ("XYZ", "XYZ", "Set Color Space to XYZ")),
+        description="Which color space to set",
+        default='Linear'
+        )
+    
+    def execute(self, context):
+        active_mat = bpy.context.active_object.active_material.name
+        sel = [x for x in bpy.data.materials[active_mat].node_tree.nodes if x.select]
+
+        for node in sel:
+            if node.type == 'TEX_IMAGE':
+                if self.toggle == "toggle":
+                    if node.image.colorspace_settings.name == 'sRGB':
+                        node.image.colorspace_settings.name = 'Linear'
+                    else:
+                        node.image.colorspace_settings.name = 'sRGB'
+                else:
+                    node.image.colorspace_settings.name = self.options
+        return{'FINISHED'}
+
 
 #-------------------------------------------------------------------
 #Blender required stuff
@@ -6210,6 +6252,7 @@ classes = (
     CustomNormals,
     SelLinked,
     ViewGroup,
+    ToggleColSpc,
 )
 
 addon_keymaps = []
@@ -6297,6 +6340,11 @@ def register():
 
     kmi = km.keymap_items.new("wm.call_menu_pie", "RIGHTMOUSE", "CLICK_DRAG")
     kmi.properties.name="Mesh.EMC_MT_SelectUV"
+    addon_keymaps.append((km, kmi))
+
+    km = wm.keyconfigs.addon.keymaps.new(name = "Node Editor", space_type = "NODE_EDITOR")
+
+    kmi = km.keymap_items.new("emc.togglecolspc", "C", "PRESS", shift=True, ctrl=True) 
     addon_keymaps.append((km, kmi))
 
 
