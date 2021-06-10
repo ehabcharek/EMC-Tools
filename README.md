@@ -3,7 +3,7 @@
 
 ![thumbnail](https://public-files.gumroad.com/variants/z5hpq8yzizdc70teszaxu0ipe74y/3298c3eb001bbed90f1d616da66708480096a0a1b6e81bd4f8a2d6e9b831d301)
 
-*Works on versions 2.83 all the way up to 2.91.*
+*Works on versions 2.83 all the way up to 3.0 as of the time of writing. Will continue updating. If there are any issues or questions, please feel free to contact me!*
 
 [Documentation](https://www.artstation.com/artwork/4816nl)
 
