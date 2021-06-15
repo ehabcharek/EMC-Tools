@@ -229,7 +229,6 @@ class VIEW3D_MT_EmcModifiers(Menu):
 
             pie.operator("emc.null", text='Object type not supported or has no modifiers', icon='ERROR')
 
-            
 
 class VIEW3D_MT_Extras(Menu):
     bl_label = "EMC Extras"
@@ -1564,9 +1563,12 @@ class EmcUV(bpy.types.Operator):
     
     def execute(self, context):
         bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.wm.call_menu(name="VIEW3D_MT_uv_map")
-        # bpy.ops.screen.userpref_show('INVOKE_DEFAULT')
-        # bpy.context.area.ui_type = 'UV'
+        if int_version > 283:
+            bpy.ops.screen.info_log_show()
+            bpy.ops.screen.space_type_set_or_cycle(space_type='IMAGE_EDITOR')
+            bpy.ops.screen.space_type_set_or_cycle(space_type='IMAGE_EDITOR')
+        else:
+            bpy.ops.wm.call_menu(name="VIEW3D_MT_uv_map")
         return{'FINISHED'}    
 
 class SelHier(bpy.types.Operator):
