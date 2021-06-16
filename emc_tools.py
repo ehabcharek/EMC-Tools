@@ -19,7 +19,7 @@
 bl_info = {
     "name": "EMC Tools",
     "author": "Ehab Charek",
-    "version": (1, 2, 3),
+    "version": (1, 2, 4),
     "blender": (2, 83, 3),
     "location": "View3D",
     "category": "Pie Menu",
@@ -1563,7 +1563,7 @@ class EmcUV(bpy.types.Operator):
     
     def execute(self, context):
         bpy.ops.object.mode_set(mode='EDIT')
-        if int_version > 283:
+        if bpy.context.preferences.addons[__name__].preferences.uv_unwrap:
             bpy.ops.screen.info_log_show()
             bpy.ops.screen.space_type_set_or_cycle(space_type='IMAGE_EDITOR')
             bpy.ops.screen.space_type_set_or_cycle(space_type='IMAGE_EDITOR')
@@ -6134,9 +6134,17 @@ class PreferencesNotes(bpy.types.AddonPreferences):
     editmesh: bpy.props.BoolProperty(name = 'Edit Mesh Tools')
     material: bpy.props.BoolProperty(name = 'Material Utilities')
     polyquilt: bpy.props.BoolProperty(name = 'PolyQuilt')
+    uv_unwrap: bpy.props.BoolProperty(name = 'UV Unwrapping function. True = UV Window | False = UV Menu')
 
     def draw(self, context):
         layout = self.layout
+        
+        if int_version > 283:
+            layout.label(text='-------------------------------')
+            layout.prop(self, "uv_unwrap")
+            layout.label(text='-------------------------------')
+            row = layout.row()
+
         layout.label(text='DISCLAIMER: The buttons below are just there to show the current status of the addon')
         layout.label(text="they don't actually do anything!")
         layout.label(text='MAKE SURE TO ENABLE THE UNCHECKED ADDONS:')
@@ -6148,6 +6156,7 @@ class PreferencesNotes(bpy.types.AddonPreferences):
         layout.label(text='- OPTIONAL EXTERNAL ADDON')
         layout.prop(self, "polyquilt")
         row = layout.row()
+        
         layout.label(text='Search for "EMC" in the Keymap Editor for All Available Shortcuts')
         layout.label(text='IMPORTANT! The Default Shortcuts are Based on the Ones Found in Maya. I Encourage you to Re-Assign Your Own Shortcuts!')
 
