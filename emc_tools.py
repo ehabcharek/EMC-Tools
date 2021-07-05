@@ -3759,8 +3759,14 @@ class EmcBevelModal(bpy.types.Operator):
                     bpy.context.object.modifiers[self.mod_loc].profile = 0.5
                     bpy.context.object.modifiers[self.mod_loc].angle_limit = 0.523599
                     self.init = False
-                    
-                bpy.context.object.modifiers[self.mod_loc].width = width
+                
+                if self.mods_with_bevel == 0:
+                    bpy.context.object.modifiers[self.mod_loc].width = width
+                else:
+                    for edge in bpy.context.object.data.edges:
+                        if edge.select:
+                            edge.bevel_weight = width/4
+
                 # print(self.temp_offs + (delta - self.current_mouse_x))
             
         
@@ -4928,9 +4934,10 @@ class EmcWeightedNormals(bpy.types.Operator):
         og_mod = ''
 
         for obj in og:
-            bpy.ops.object.select_all(action='DESELECT')
-            obj.select_set(True)
-            bpy.context.view_layer.objects.active = obj
+            if bpy.context.object.mode == 'OBJECT':
+                bpy.ops.object.select_all(action='DESELECT')
+                obj.select_set(True)
+                bpy.context.view_layer.objects.active = obj
 
             for modifier in obj.modifiers:
                 if modifier.type == 'BEVEL':
@@ -4943,7 +4950,10 @@ class EmcWeightedNormals(bpy.types.Operator):
                 bpy.context.object.modifiers[-1].keep_sharp = sharp
                 bpy.context.object.modifiers[-1].mode = mode
                 bpy.context.object.data.use_auto_smooth = True
-                bpy.ops.object.shade_smooth()
+                try:
+                    bpy.ops.object.shade_smooth()
+                except:
+                    pass
                 bpy.context.object.modifiers[-1].show_expanded = False
             else:
                 bpy.ops.object.modifier_move_to_index(modifier=og_mod, index=len(bpy.context.active_object.modifiers)-1)
