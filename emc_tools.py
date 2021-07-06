@@ -4953,7 +4953,9 @@ class EmcWeightedNormals(bpy.types.Operator):
                 try:
                     bpy.ops.object.shade_smooth()
                 except:
-                    pass
+                    bpy.ops.object.mode_set(mode='OBJECT')
+                    bpy.ops.object.shade_smooth()
+                    bpy.ops.object.mode_set(mode='EDIT')
                 bpy.context.object.modifiers[-1].show_expanded = False
             else:
                 bpy.ops.object.modifier_move_to_index(modifier=og_mod, index=len(bpy.context.active_object.modifiers)-1)
@@ -6131,6 +6133,35 @@ class ToggleColSpc(bpy.types.Operator):
                     node.image.colorspace_settings.name = self.options
         return{'FINISHED'}
 
+class ToggleOrbit(bpy.types.Operator):
+    """Orbit method in the viewport"""
+    bl_label = "Orbit Method"
+    bl_idname = "emc.orbit"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    orb: bpy.props.EnumProperty(
+        name="Orbit Method",
+        items=(("toggle", "Toggle", "Toggle Orbit Method"),
+               ("TURNTABLE", "Turntable", "Keeps the Z-axis upright while orbiting"),
+               ("TRACKBALL", "Trackball", "Allows you to tumble your view at any angle")),
+        description="Orbit method in the viewport",
+        default='toggle'
+        )
+    
+    def execute(self, context):
+
+        if self.orb == 'toggle':
+            if bpy.context.preferences.inputs.view_rotate_method == 'TRACKBALL':
+                bpy.context.preferences.inputs.view_rotate_method = 'TURNTABLE'
+            else:
+                bpy.context.preferences.inputs.view_rotate_method = 'TRACKBALL'
+        else:
+            bpy.context.preferences.inputs.view_rotate_method = self.orb
+
+        bpy.context.scene.EMC_orbit_method = bpy.context.preferences.inputs.view_rotate_method
+
+        return{'FINISHED'}
+
 
 #-------------------------------------------------------------------
 #Blender required stuff
@@ -6274,6 +6305,7 @@ classes = (
     SelLinked,
     ViewGroup,
     ToggleColSpc,
+    ToggleOrbit,
 )
 
 addon_keymaps = []
@@ -6346,6 +6378,9 @@ def register():
     kmi = km.keymap_items.new("emc.togglesubd", "V", "PRESS", shift=True, ctrl=True) 
     addon_keymaps.append((km, kmi))
 
+    kmi = km.keymap_items.new("emc.orbit", "B", "PRESS", shift=True, alt=True) 
+    addon_keymaps.append((km, kmi))
+
     kmi = km.keymap_items.new("wm.call_menu_pie", "A", "CLICK_DRAG", shift=True, ctrl=True)
     kmi.properties.name="Mesh.EMC_MT_Modifiers"  
     addon_keymaps.append((km, kmi))
@@ -6368,6 +6403,11 @@ def register():
     kmi = km.keymap_items.new("emc.togglecolspc", "C", "PRESS", shift=True, ctrl=True) 
     addon_keymaps.append((km, kmi))
 
+    bpy.types.Scene.EMC_orbit_method = bpy.props.StringProperty(
+        name = "Orbit Method",
+
+    )
+
 
 def unregister():
     from bpy.utils import unregister_class
@@ -6377,6 +6417,8 @@ def unregister():
     for km, kmi in addon_keymaps:
         km.keymap_items.remove(kmi)
     addon_keymaps.clear()
+
+    del bpy.types.Scene.orbit_method
         
     print("undone")
 
