@@ -3709,6 +3709,7 @@ class EmcBevelModal(bpy.types.Operator):
     mod_name: bpy.props.StringProperty()
     pressed_z: bpy.props.BoolProperty()
     vg_exist: bpy.props.BoolProperty()
+    og_mod_loc: bpy.props.IntProperty()
 
     def modal(self, context, event):
 
@@ -3845,6 +3846,7 @@ class EmcBevelModal(bpy.types.Operator):
                 if self.vg_exist:
                     self.pressed_z = not self.pressed_z
                     if self.pressed_z:
+                        self.og_mod_loc = self.mod_loc
                         bpy.ops.object.mode_set(mode='EDIT')
                         bpy.ops.mesh.select_all(action='DESELECT')
                         bpy.context.object.vertex_groups.active_index = bpy.context.object.vertex_groups['EMC_BEVEL_OG_TEMP'].index
@@ -3862,6 +3864,7 @@ class EmcBevelModal(bpy.types.Operator):
                         bpy.context.object.modifiers[-1].name = "VG_" + bpy.context.object.vertex_groups[-1].name
                         self.mod_loc = -1
                     else:
+                        self.mod_loc = self.og_mod_loc
                         bpy.ops.object.mode_set(mode='EDIT')
                         bpy.ops.mesh.select_all(action='DESELECT')
                         bpy.context.object.vertex_groups.active_index = -1
@@ -3979,9 +3982,13 @@ class EmcBevelModal(bpy.types.Operator):
                         
                         mod_index = 0
                         for m in bpy.context.object.modifiers:
-                            if m.name == "VG_" + belongs_to:
-                                break
-                            else:
+                            # if m.name == "VG_" + belongs_to:
+                            try:
+                                if m.vertex_group == belongs_to:
+                                    break
+                                else:
+                                    mod_index += 1
+                            except:
                                 mod_index += 1
 
                         self.mod_loc = mod_index
