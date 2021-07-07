@@ -3705,6 +3705,10 @@ class EmcBevelModal(bpy.types.Operator):
     mod_loc: bpy.props.IntProperty()
     mods_with_bevel: bpy.props.IntProperty()
     og_mods_num: bpy.props.IntProperty()
+    og_vg_num: bpy.props.IntProperty()
+    mod_name: bpy.props.StringProperty()
+    pressed_z: bpy.props.BoolProperty()
+    vg_exist: bpy.props.BoolProperty()
 
     def modal(self, context, event):
 
@@ -3786,16 +3790,20 @@ class EmcBevelModal(bpy.types.Operator):
             
         elif event.type == 'A':
             bpy.context.object.modifiers[self.mod_loc].limit_method = 'ANGLE'
+            bpy.context.object.modifiers[self.mod_loc].name = "ANGLE_EMC_BEVEL"
             
         elif event.type == 'N':
             bpy.context.object.modifiers[self.mod_loc].limit_method = 'NONE'
+            bpy.context.object.modifiers[self.mod_loc].name = "EMC_BEVEL"
         
         elif event.type == 'W':
             bpy.context.object.modifiers[self.mod_loc].limit_method = 'WEIGHT'
+            bpy.context.object.modifiers[self.mod_loc].name = "WEIGHT_EMC_BEVEL"
             
         elif event.type == 'V':
             bpy.context.object.modifiers[self.mod_loc].limit_method = 'VGROUP'
             bpy.context.object.modifiers[self.mod_loc].vertex_group = bpy.context.object.vertex_groups[-1].name
+            bpy.context.object.modifiers[self.mod_loc].name = "VG_" + bpy.context.object.vertex_groups[-1].name
 
         elif event.type == 'X':
             if event.value == 'PRESS':
@@ -3831,7 +3839,36 @@ class EmcBevelModal(bpy.types.Operator):
         elif event.type == 'L':
             if event.value == 'PRESS':
                 bpy.context.object.modifiers[self.mod_loc].loop_slide = not bpy.context.object.modifiers[self.mod_loc].loop_slide
-
+        
+        elif event.type == 'Z':
+            if event.value == 'PRESS':
+                if self.vg_exist:
+                    self.pressed_z = not self.pressed_z
+                    if self.pressed_z:
+                        bpy.ops.object.mode_set(mode='EDIT')
+                        bpy.ops.mesh.select_all(action='DESELECT')
+                        bpy.context.object.vertex_groups.active_index = bpy.context.object.vertex_groups['EMC_BEVEL_OG_TEMP'].index
+                        bpy.ops.object.vertex_group_select()
+                        bpy.ops.object.vertex_group_add()
+                        bpy.context.scene.tool_settings.vertex_group_weight = 1
+                        bpy.ops.object.vertex_group_assign()
+                        bpy.context.object.vertex_groups[-1].name = 'EMC_Bevel'
+                        bpy.ops.object.mode_set(mode='OBJECT')
+                        bpy.ops.object.modifier_add(type='BEVEL')
+                        bpy.context.object.modifiers[-1].harden_normals = True
+                        bpy.context.object.modifiers[-1].miter_outer = 'MITER_ARC'
+                        bpy.context.object.modifiers[-1].vertex_group = bpy.context.object.vertex_groups[-1].name
+                        bpy.context.object.modifiers[-1].limit_method = 'VGROUP'
+                        bpy.context.object.modifiers[-1].name = "VG_" + bpy.context.object.vertex_groups[-1].name
+                        self.mod_loc = -1
+                    else:
+                        bpy.ops.object.mode_set(mode='EDIT')
+                        bpy.ops.mesh.select_all(action='DESELECT')
+                        bpy.context.object.vertex_groups.active_index = -1
+                        bpy.ops.object.vertex_group_select()
+                        bpy.ops.object.mode_set(mode='OBJECT')
+                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+                        bpy.context.active_object.vertex_groups.remove(bpy.context.active_object.vertex_groups[-1])
 
         elif event.type in {'MIDDLEMOUSE'}:
             return {'PASS_THROUGH'}
@@ -3842,18 +3879,28 @@ class EmcBevelModal(bpy.types.Operator):
             context.area.header_text_set(None)
             bpy.types.WorkSpace.status_text_set_internal(None)
             bpy.context.object.show_wire = self.wires
+            try:
+                bpy.context.active_object.vertex_groups.remove(bpy.context.active_object.vertex_groups['EMC_BEVEL_OG_TEMP'])
+            except:
+                pass
             return {'FINISHED'}
 
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
             bpy.context.object.modifiers[self.mod_loc].width = self.offset
             bpy.context.object.modifiers[self.mod_loc].segments = self.segments
             bpy.context.object.modifiers[self.mod_loc].profile = self.profile
-            bpy.context.object.modifiers[self.mod_loc].angle_limit = self.temp_angl                
+            bpy.context.object.modifiers[self.mod_loc].angle_limit = self.temp_angl    
+            try:
+                bpy.context.active_object.vertex_groups.remove(bpy.context.active_object.vertex_groups['EMC_BEVEL_OG_TEMP'])
+            except:
+                pass            
             if self.edit == True:
                 if self.vert_select:
-                    bpy.ops.object.vertex_group_remove(all=False, all_unlocked=False)
                     bpy.ops.object.mode_set(mode='EDIT')
-                    bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+                    if self.og_vg_num != len(bpy.context.active_object.vertex_groups):
+                        bpy.context.active_object.vertex_groups.remove(bpy.context.active_object.vertex_groups[-1])
+                    if self.og_mods_num != len(bpy.context.object.modifiers):
+                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
                 else:
                     bpy.ops.object.mode_set(mode='EDIT')
                     bpy.ops.ed.undo()
@@ -3873,7 +3920,7 @@ class EmcBevelModal(bpy.types.Operator):
                 "Angle: " + str(round(bpy.context.object.modifiers[self.mod_loc].angle_limit*180/math.pi, 1)) + " | " + 
                 "Loop Slide: " + str(bpy.context.object.modifiers[self.mod_loc].loop_slide)
             )
-            bpy.types.WorkSpace.status_text_set_internal("MMB Scroll/ Page U/D: Segments | Ctrl: Profile | Shift: Angle | C: Clamp | N/A/W/V: Limit Method | X: Only Vertices | S: Outer Miter | H: Harden Normals | Q: Toggle Wireframe | L: Loop Slide")
+            bpy.types.WorkSpace.status_text_set_internal("MMB Scroll/ Page U/D: Segments | Ctrl: Profile | Shift: Angle | C: Clamp | N/A/W/V: Limit Method | X: Only Vertices | S: Outer Miter | H: Harden Normals | Q: Toggle Wireframe | L: Loop Slide | Z: New VG")
         except:
             pass
         return {'RUNNING_MODAL'}
@@ -3884,10 +3931,14 @@ class EmcBevelModal(bpy.types.Operator):
         self.init = True
         self.wires = bpy.context.object.show_wire
         self.og_mods_num = len(bpy.context.object.modifiers)
+        self.og_vg_num = len(bpy.context.active_object.vertex_groups)
         self.vert_select = True if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False) else False
         self.mod_loc = -1
         self.mods_with_bevel = 0
         mod_temp_loc = 0
+        self.mod_name = "NONE"
+        self.vg_exist = False
+        self.pressed_z = False
 
         try:
             bpy.context.object.data.use_auto_smooth = True
@@ -3896,19 +3947,54 @@ class EmcBevelModal(bpy.types.Operator):
         bpy.context.object.show_wire = True
 
         if bpy.context.object.mode == 'EDIT':
-            bm = bmesh.from_edit_mesh(context.edit_object.data)
+            bm = bmesh.from_edit_mesh(bpy.context.edit_object.data)
             selected_verts = [vertex for vertex in bm.verts if vertex.select]
             bpy.ops.object.modifier_add(type='BEVEL')
             bpy.context.object.modifiers[-1].harden_normals = True
             bpy.context.object.modifiers[-1].miter_outer = 'MITER_ARC'
             if len(selected_verts) > 0:
                 if self.vert_select:
-                    bpy.ops.object.vertex_group_add()
-                    bpy.context.scene.tool_settings.vertex_group_weight = 1
-                    bpy.ops.object.vertex_group_assign()
-                    bpy.context.object.vertex_groups[-1].name = 'EMC Bevel'
-                    bpy.context.object.modifiers[-1].vertex_group = bpy.context.object.vertex_groups[self.mod_loc].name
-                    bpy.context.object.modifiers[-1].limit_method = 'VGROUP'
+                    belongs_to = ""
+                    for g in bpy.context.object.vertex_groups:
+                        for v in selected_verts:
+                            try:
+                                g.weight(index=v.index)
+                                belongs_to = g.name
+                                self.vg_exist = True
+                            except:
+                                pass
+                    
+                    if self.vg_exist:
+                        bpy.ops.object.vertex_group_add()
+                        print("added")
+                        bpy.context.scene.tool_settings.vertex_group_weight = 1
+                        bpy.ops.object.vertex_group_assign()
+                        print("assigned")
+                        bpy.context.object.vertex_groups[-1].name = 'EMC_BEVEL_OG_TEMP'
+                        print("named")
+
+                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+                        bpy.context.object.vertex_groups.active_index = bpy.context.object.vertex_groups[belongs_to].index
+                        bpy.ops.object.vertex_group_select()
+                        
+                        mod_index = 0
+                        for m in bpy.context.object.modifiers:
+                            if m.name == "VG_" + belongs_to:
+                                break
+                            else:
+                                mod_index += 1
+
+                        self.mod_loc = mod_index
+                        print(belongs_to+", "+ str(mod_index))
+                        
+                    else:
+                        bpy.ops.object.vertex_group_add()
+                        bpy.context.scene.tool_settings.vertex_group_weight = 1
+                        bpy.ops.object.vertex_group_assign()
+                        bpy.context.object.vertex_groups[-1].name = 'EMC_Bevel'
+                        self.mod_name = "VG"
+                        bpy.context.object.modifiers[-1].vertex_group = bpy.context.object.vertex_groups[self.mod_loc].name
+                        bpy.context.object.modifiers[-1].limit_method = 'VGROUP'
                 else:
                     for modifier in bpy.context.object.modifiers:
                         mod_temp_loc += 1
@@ -3928,7 +4014,13 @@ class EmcBevelModal(bpy.types.Operator):
             bpy.context.object.modifiers[self.mod_loc].harden_normals = True
             bpy.context.object.modifiers[self.mod_loc].miter_outer = 'MITER_ARC'
             bpy.context.object.modifiers[self.mod_loc].limit_method = 'ANGLE'
+            bpy.context.object.modifiers[self.mod_loc].name = "ANGLE_EMC_Bevel"
             self.edit = False
+
+        if self.mod_name == "VG":
+            bpy.context.object.modifiers[self.mod_loc].name = "VG_" + bpy.context.object.vertex_groups[-1].name
+        elif self.mod_name == "WG":
+            bpy.context.object.modifiers[self.mod_loc].name = "WEIGHT_EMC_BEVEL"
 
         try:
             bpy.data.window_managers["WinMan"].modifier_list.active_object_modifier_active_index = -1
@@ -6418,7 +6510,7 @@ def unregister():
         km.keymap_items.remove(kmi)
     addon_keymaps.clear()
 
-    del bpy.types.Scene.orbit_method
+    del bpy.types.Scene.EMC_orbit_method
         
     print("undone")
 
