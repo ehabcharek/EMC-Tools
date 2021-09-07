@@ -28,10 +28,11 @@ bl_info = {
     "warning": "WIP"
 }
 
-import bpy, bmesh, math, mathutils, addon_utils, traceback
+import bpy, bmesh, math, mathutils, addon_utils, traceback, rna_prop_ui
 from bpy.types import Menu, Operator
-from rna_prop_ui import rna_idprop_ui_prop_get
 
+#-------------------------------------------------------------------
+#Setting up some stuff
 
 version = bpy.app.version
 if version[1] == 0:
@@ -77,20 +78,37 @@ def delete_drivers():
         driver.remove(driver[0])
 
 def create_prop(name, value, desc, use_min, use_max, use_lims, use_soft_min, use_soft_max, min, max, soft_min, soft_max):
+    # Create property:
     bpy.context.active_object[name] = value
-    prop_ui = rna_idprop_ui_prop_get(bpy.context.active_object, name)
-    prop_ui["default"] = value
-    if use_min:
-        prop_ui["min"] = min
-    if use_max:
-        prop_ui["max"] = max
-    prop_ui["is_overridable_library"] = True
-    prop_ui["use_soft_limits"] = use_lims
-    if use_soft_min:
-        prop_ui["soft_min"] = soft_min
-    if use_soft_max:
-        prop_ui["soft_max"] = soft_max
-    prop_ui["description"] = desc
+    
+    # Set limits:
+    lo = '["%s"]' %name
+    bpy.context.active_object.property_overridable_library_set(r'%s' %lo, True)
+
+    if int_version < 300:
+        prop_ui = rna_prop_ui.rna_idprop_ui_prop_get(bpy.context.active_object, name)
+        prop_ui["default"] = value
+        if use_min:
+            prop_ui["min"] = min
+        if use_max:
+            prop_ui["max"] = max
+        prop_ui["use_soft_limits"] = use_lims
+        if use_soft_min:
+            prop_ui["soft_min"] = soft_min
+        if use_soft_max:
+            prop_ui["soft_max"] = soft_max
+        prop_ui["description"] = desc
+    else:
+        prop_ui = bpy.context.active_object.id_properties_ui(name)
+        prop_ui.update(default=value, description=desc)
+        if use_min:
+            prop_ui.update(min = min)
+        if use_max:
+            prop_ui.update(max = max)
+        if use_soft_min:
+            prop_ui.update(soft_min = soft_min)
+        if use_soft_max:
+            prop_ui.update(soft_max = soft_max)
 
 def create_driver(mod_name, mod_var, expression, path):
     dr = bpy.context.object.modifiers[mod_name].driver_add(mod_var)
@@ -100,6 +118,59 @@ def create_driver(mod_name, mod_var, expression, path):
     var.type = 'SINGLE_PROP'
     var.targets[0].id = bpy.context.object
     var.targets[0].data_path = path
+
+#-------------------------------------------------------------------
+#Blender required stuff
+
+class PreferencesNotes(bpy.types.AddonPreferences):
+    bl_idname = __name__
+    
+    looptools: bpy.props.BoolProperty(name = 'Loop Tools')
+    extraObjects: bpy.props.BoolProperty(name = 'Extra Objects')
+    f2: bpy.props.BoolProperty(name = 'F2')
+    editmesh: bpy.props.BoolProperty(name = 'Edit Mesh Tools')
+    material: bpy.props.BoolProperty(name = 'Material Utilities')
+    polyquilt: bpy.props.BoolProperty(name = 'PolyQuilt')
+    uv_unwrap: bpy.props.BoolProperty(name = 'UV Unwrapping function. True = UV Window | False = UV Menu')
+    apply: bpy.props.BoolProperty(name = 'Apply modifiers of generated primitives by default')
+
+    def draw(self, context):
+        layout = self.layout
+        
+        layout.label(text='-------------------------------')
+
+        if int_version > 283:
+            layout.prop(self, "uv_unwrap")
+
+        
+
+        layout.label(text='-------------------------------')
+        row = layout.row()
+
+        layout.label(text='DISCLAIMER: The buttons below are just there to show the current status of the addon')
+        layout.label(text="they don't actually do anything!")
+        layout.label(text='MAKE SURE TO ENABLE THE UNCHECKED ADDONS:')
+        layout.prop(self, "looptools")
+        layout.prop(self, "extraObjects")
+        layout.prop(self, "f2")
+        layout.prop(self, "editmesh")
+        layout.prop(self, "material")
+        layout.label(text='- OPTIONAL EXTERNAL ADDON')
+        layout.prop(self, "polyquilt")
+        row = layout.row()
+        
+        layout.label(text='Search for "EMC" in the Keymap Editor for All Available Shortcuts')
+        layout.label(text='IMPORTANT! The Default Shortcuts are Based on the Ones Found in Maya. I Encourage you to Re-Assign Your Own Shortcuts!')
+
+class Nothing(bpy.types.Operator):
+    """Nothing Here Jimbo"""
+    bl_label = "Nothing"
+    bl_idname = "emc.null"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        self.report({"ERROR"}, "Action(s) Unavailable")
+        return{'FINISHED'}
 
 
 #-------------------------------------------------------------------
@@ -6259,55 +6330,6 @@ class ToggleOrbit(bpy.types.Operator):
 
         bpy.context.scene.EMC_orbit_method = bpy.context.preferences.inputs.view_rotate_method
 
-        return{'FINISHED'}
-
-
-#-------------------------------------------------------------------
-#Blender required stuff
-
-class PreferencesNotes(bpy.types.AddonPreferences):
-    bl_idname = __name__
-    
-    looptools: bpy.props.BoolProperty(name = 'Loop Tools')
-    extraObjects: bpy.props.BoolProperty(name = 'Extra Objects')
-    f2: bpy.props.BoolProperty(name = 'F2')
-    editmesh: bpy.props.BoolProperty(name = 'Edit Mesh Tools')
-    material: bpy.props.BoolProperty(name = 'Material Utilities')
-    polyquilt: bpy.props.BoolProperty(name = 'PolyQuilt')
-    uv_unwrap: bpy.props.BoolProperty(name = 'UV Unwrapping function. True = UV Window | False = UV Menu')
-
-    def draw(self, context):
-        layout = self.layout
-        
-        if int_version > 283:
-            layout.label(text='-------------------------------')
-            layout.prop(self, "uv_unwrap")
-            layout.label(text='-------------------------------')
-            row = layout.row()
-
-        layout.label(text='DISCLAIMER: The buttons below are just there to show the current status of the addon')
-        layout.label(text="they don't actually do anything!")
-        layout.label(text='MAKE SURE TO ENABLE THE UNCHECKED ADDONS:')
-        layout.prop(self, "looptools")
-        layout.prop(self, "extraObjects")
-        layout.prop(self, "f2")
-        layout.prop(self, "editmesh")
-        layout.prop(self, "material")
-        layout.label(text='- OPTIONAL EXTERNAL ADDON')
-        layout.prop(self, "polyquilt")
-        row = layout.row()
-        
-        layout.label(text='Search for "EMC" in the Keymap Editor for All Available Shortcuts')
-        layout.label(text='IMPORTANT! The Default Shortcuts are Based on the Ones Found in Maya. I Encourage you to Re-Assign Your Own Shortcuts!')
-
-class Nothing(bpy.types.Operator):
-    """Nothing Here Jimbo"""
-    bl_label = "Nothing"
-    bl_idname = "emc.null"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        self.report({"ERROR"}, "Action(s) Unavailable")
         return{'FINISHED'}
 
 
