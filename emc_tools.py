@@ -19,16 +19,16 @@
 bl_info = {
     "name": "EMC Tools",
     "author": "Ehab Charek",
-    "version": (1, 2, 4),
+    "version": (1, 3, 0),
     "blender": (2, 83, 3),
     "location": "View3D",
     "category": "Pie Menu",
     "description": "EMC's custom shortcuts and menus. Partially Maya Marking Menu Replicas tho",
-    "doc_url": "https://gum.co/emctools",
-    "warning": "WIP"
+    "doc_url": "https://www.artstation.com/artwork/4816nl",
+    "warning": "This addon is always in WIP state"
 }
 
-import bpy, bmesh, math, mathutils, addon_utils, traceback, rna_prop_ui
+import bpy, bmesh, math, mathutils, addon_utils, traceback, rna_prop_ui, random
 from bpy.types import Menu, Operator
 
 #-------------------------------------------------------------------
@@ -39,6 +39,8 @@ if version[1] == 0:
     int_version = int(str(version[0])+str(version[1])+str(version[2]))
 else:
     int_version = int(str(version[0])+str(version[1]))
+if len(str(int_version)) < 3:
+    int_version *= 10
 
 def bmesh_vert_active(bm):
     if bm.select_history:
@@ -768,6 +770,12 @@ class Helix(bpy.types.Operator):
     bl_description = "Create a Helix Primitive"
     bl_options = {'REGISTER', 'UNDO'}
 
+    name: bpy.props.StringProperty(
+        name = "Name", 
+        description = "Name of Object", 
+        default = "EMC Helix",
+    )
+
     width: bpy.props.FloatProperty(
         name = "Width", 
         description = "Width of the Spring", 
@@ -809,6 +817,12 @@ class Helix(bpy.types.Operator):
         default = 4,
         min = 1
     )
+    
+    rand_col: bpy.props.BoolProperty(
+        name = "Random Color",
+        description = "Give object a random color",
+        default = False,
+        )
 
     apply: bpy.props.BoolProperty(
         name = "Apply Modifiers",
@@ -879,8 +893,11 @@ class Helix(bpy.types.Operator):
             del bpy.context.active_object['Spring Subdivisions']
             delete_drivers()
 
-        bpy.context.object.name = "EMC Helix"
-        bpy.context.object.data.name = "EMC Helix"
+        if self.rand_col:
+            bpy.context.active_object.color = (random.random(), random.random(), random.random(), 1)
+
+        bpy.context.object.name = self.name
+        bpy.context.object.data.name = self.name
         return{'FINISHED'}
 
 class Pipe(bpy.types.Operator):
@@ -888,6 +905,12 @@ class Pipe(bpy.types.Operator):
     bl_idname = "emc.pipe"
     bl_description = "Create a Pipe Primitive"
     bl_options = {'REGISTER', 'UNDO'}
+
+    name: bpy.props.StringProperty(
+        name = "Name", 
+        description = "Name of Object", 
+        default = "EMC Pipe",
+    )
       
     width: bpy.props.FloatProperty(
         name = "Width", 
@@ -923,6 +946,12 @@ class Pipe(bpy.types.Operator):
         default = 16,
         min = 3
     )
+
+    rand_col: bpy.props.BoolProperty(
+        name = "Random Color",
+        description = "Give object a random color",
+        default = False,
+        )
 
     apply: bpy.props.BoolProperty(
         name = "Apply Modifiers",
@@ -991,8 +1020,11 @@ class Pipe(bpy.types.Operator):
             del bpy.context.active_object['Height']
             delete_drivers()
 
-        bpy.context.object.name = "EMC Pipe"
-        bpy.context.object.data.name = "EMC Pipe"
+        if self.rand_col:
+            bpy.context.active_object.color = (random.random(), random.random(), random.random(), 1)
+
+        bpy.context.object.name = self.name
+        bpy.context.object.data.name = self.name
         return{'FINISHED'}
 
 class Prism(bpy.types.Operator):
@@ -1000,6 +1032,12 @@ class Prism(bpy.types.Operator):
     bl_idname = "emc.prism"
     bl_description = "Create a Prism Primitive"
     bl_options = {'REGISTER', 'UNDO'}
+
+    name: bpy.props.StringProperty(
+        name = "Name", 
+        description = "Name of Object", 
+        default = "EMC Prism",
+    )
 
     width: bpy.props.FloatProperty(
         name = "Width", 
@@ -1034,6 +1072,12 @@ class Prism(bpy.types.Operator):
         default = 2,
         min = 1
     )
+
+    rand_col: bpy.props.BoolProperty(
+        name = "Random Color",
+        description = "Give object a random color",
+        default = False,
+        )
 
     apply: bpy.props.BoolProperty(
         name = "Apply Modifiers",
@@ -1106,8 +1150,11 @@ class Prism(bpy.types.Operator):
                 pass
             delete_drivers()
 
-        bpy.context.object.name = "EMC Prism"
-        bpy.context.object.data.name = "EMC Prism"
+        if self.rand_col:
+            bpy.context.active_object.color = (random.random(), random.random(), random.random(), 1)
+
+        bpy.context.object.name = self.name
+        bpy.context.object.data.name = self.name
         return{'FINISHED'}
 
 class Mobius(bpy.types.Operator):
@@ -1115,6 +1162,12 @@ class Mobius(bpy.types.Operator):
     bl_idname = "emc.mobius"
     bl_description = "Create a Mobius Strip"
     bl_options = {'REGISTER', 'UNDO'}
+
+    name: bpy.props.StringProperty(
+        name = "Name", 
+        description = "Name of Object", 
+        default = "EMC Mobius",
+    )
 
     width: bpy.props.FloatProperty(
         name = "Width", 
@@ -1163,6 +1216,12 @@ class Mobius(bpy.types.Operator):
         description = "Distance of Merging the Generated Seam",
         default = 0.05,
         min = 0.001,
+        )
+
+    rand_col: bpy.props.BoolProperty(
+        name = "Random Color",
+        description = "Give object a random color",
+        default = False,
         )
 
     apply: bpy.props.BoolProperty(
@@ -1215,8 +1274,11 @@ class Mobius(bpy.types.Operator):
             bpy.ops.object.mode_set(mode='OBJECT')
         bpy.context.object.data.use_auto_smooth = True
 
-        bpy.context.object.name = "EMC Mobius Strip"
-        bpy.context.object.data.name = "EMC Mobius Strip"
+        if self.rand_col:
+            bpy.context.active_object.color = (random.random(), random.random(), random.random(), 1)
+
+        bpy.context.object.name = self.name
+        bpy.context.object.data.name = self.name
         return{'FINISHED'}
 
 class PolyDraw(bpy.types.Operator):
@@ -2667,6 +2729,12 @@ class addCylinder(bpy.types.Operator):
     bl_description = "Create a Cylinder Modifier Parametric Primitive"
     bl_options = {'REGISTER', 'UNDO'}
 
+    name: bpy.props.StringProperty(
+        name = "Name", 
+        description = "Name of Object", 
+        default = "EMC Cylinder",
+    )
+
     vertices: bpy.props.IntProperty(
         name = "Vertices",
         description = "Vertices",
@@ -2706,6 +2774,12 @@ class addCylinder(bpy.types.Operator):
         description = "Use Smooth Shading",
         default = True,
     )
+
+    rand_col: bpy.props.BoolProperty(
+        name = "Random Color",
+        description = "Give object a random color",
+        default = False,
+        )
 
     apply: bpy.props.BoolProperty(
         name = "Apply Modifiers",
@@ -2843,8 +2917,11 @@ class addCylinder(bpy.types.Operator):
                 pass
             delete_drivers()
 
-        bpy.context.object.name = "EMC Cylinder"
-        bpy.context.object.data.name = "EMC Cylinder"
+        if self.rand_col:
+            bpy.context.active_object.color = (random.random(), random.random(), random.random(), 1)
+
+        bpy.context.object.name = self.name
+        bpy.context.object.data.name = self.name
         return{'FINISHED'}
 
 class addPlane(bpy.types.Operator):
@@ -2852,6 +2929,12 @@ class addPlane(bpy.types.Operator):
     bl_idname = "emc.plane"
     bl_description = "Create a Plane Modifier Parametric Primitive"
     bl_options = {'REGISTER', 'UNDO'}
+
+    name: bpy.props.StringProperty(
+        name = "Name", 
+        description = "Name of Object", 
+        default = "EMC Plane",
+    )
 
     x_size: bpy.props.FloatProperty(
         name = "X Scale", 
@@ -2880,6 +2963,12 @@ class addPlane(bpy.types.Operator):
         default = 1,
         min = 1
     )
+
+    rand_col: bpy.props.BoolProperty(
+        name = "Random Color",
+        description = "Give object a random color",
+        default = False,
+        )
 
     apply: bpy.props.BoolProperty(
         name = "Apply Modifiers",
@@ -2962,8 +3051,11 @@ class addPlane(bpy.types.Operator):
             del bpy.context.active_object['Y Subdivisions']
             delete_drivers()
 
-        bpy.context.object.name = "EMC Plane"
-        bpy.context.object.data.name = "EMC Plane"
+        if self.rand_col:
+            bpy.context.active_object.color = (random.random(), random.random(), random.random(), 1)
+
+        bpy.context.object.name = self.name
+        bpy.context.object.data.name = self.name
         return{'FINISHED'}
 
 class addCube(bpy.types.Operator):
@@ -2971,6 +3063,12 @@ class addCube(bpy.types.Operator):
     bl_idname = "emc.cube"
     bl_description = "Create a Cube Modifier Parametric Primitive"
     bl_options = {'REGISTER', 'UNDO'}
+
+    name: bpy.props.StringProperty(
+        name = "Name", 
+        description = "Name of Object", 
+        default = "EMC Cube",
+    )
 
     x_size: bpy.props.FloatProperty(
         name = "X Scale", 
@@ -3013,6 +3111,12 @@ class addCube(bpy.types.Operator):
         min = 0, soft_max = 1,
         subtype = 'FACTOR',
     )
+
+    rand_col: bpy.props.BoolProperty(
+        name = "Random Color",
+        description = "Give object a random color",
+        default = False,
+        )
 
     apply: bpy.props.BoolProperty(
         name = "Apply Modifiers",
@@ -3143,8 +3247,11 @@ class addCube(bpy.types.Operator):
                 pass
             delete_drivers()
 
-        bpy.context.object.name = "EMC Cube"
-        bpy.context.object.data.name = "EMC Cube"
+        if self.rand_col:
+            bpy.context.active_object.color = (random.random(), random.random(), random.random(), 1)
+
+        bpy.context.object.name = self.name
+        bpy.context.object.data.name = self.name
         return{'FINISHED'}
 
 class addCircle(bpy.types.Operator):
@@ -3152,6 +3259,12 @@ class addCircle(bpy.types.Operator):
     bl_idname = "emc.circle"
     bl_description = "Create a Circle Modifier Parametric Primitive"
     bl_options = {'REGISTER', 'UNDO'}
+
+    name: bpy.props.StringProperty(
+        name = "Name", 
+        description = "Name of Object", 
+        default = "EMC Circle",
+    )
 
     vertices: bpy.props.IntProperty(
         name = "Vertices",
@@ -3185,6 +3298,12 @@ class addCircle(bpy.types.Operator):
         default = 1,
         min = 1
     )
+
+    rand_col: bpy.props.BoolProperty(
+        name = "Random Color",
+        description = "Give object a random color",
+        default = False,
+        )
 
     apply: bpy.props.BoolProperty(
         name = "Apply Modifiers",
@@ -3274,8 +3393,11 @@ class addCircle(bpy.types.Operator):
             del bpy.context.active_object['Radius']
             delete_drivers()
 
-        bpy.context.object.name = "EMC Circle"
-        bpy.context.object.data.name = "EMC Circle"
+        if self.rand_col:
+            bpy.context.active_object.color = (random.random(), random.random(), random.random(), 1)
+
+        bpy.context.object.name = self.name
+        bpy.context.object.data.name = self.name
         return{'FINISHED'}
 
 class addCone(bpy.types.Operator):
@@ -3283,6 +3405,12 @@ class addCone(bpy.types.Operator):
     bl_idname = "emc.cone"
     bl_description = "Create a Cone Modifier Parametric Primitive"
     bl_options = {'REGISTER', 'UNDO'}
+
+    name: bpy.props.StringProperty(
+        name = "Name", 
+        description = "Name of Object", 
+        default = "EMC Cone",
+    )
 
     vertices: bpy.props.IntProperty(
         name = "Vertices",
@@ -3330,6 +3458,12 @@ class addCone(bpy.types.Operator):
         description = "Use Smooth Shading",
         default = True,
     )
+
+    rand_col: bpy.props.BoolProperty(
+        name = "Random Color",
+        description = "Give object a random color",
+        default = False,
+        )
 
     apply: bpy.props.BoolProperty(
         name = "Apply Modifiers",
@@ -3475,8 +3609,11 @@ class addCone(bpy.types.Operator):
                 pass
             delete_drivers()
 
-        bpy.context.object.name = "EMC Cone"
-        bpy.context.object.data.name = "EMC Cone"
+        if self.rand_col:
+            bpy.context.active_object.color = (random.random(), random.random(), random.random(), 1)
+
+        bpy.context.object.name = self.name
+        bpy.context.object.data.name = self.name
         return{'FINISHED'}
 
 class addSphere(bpy.types.Operator):
@@ -3484,6 +3621,12 @@ class addSphere(bpy.types.Operator):
     bl_idname = "emc.sphere"
     bl_description = "Create a Sphere Modifier Parametric Primitive"
     bl_options = {'REGISTER', 'UNDO'}
+
+    name: bpy.props.StringProperty(
+        name = "Name", 
+        description = "Name of Object", 
+        default = "EMC Sphere",
+    )
 
     segments: bpy.props.IntProperty(
         name = "Segments",
@@ -3511,6 +3654,12 @@ class addSphere(bpy.types.Operator):
         description = "Use Smooth Shading",
         default = True,
     )
+
+    rand_col: bpy.props.BoolProperty(
+        name = "Random Color",
+        description = "Give object a random color",
+        default = False,
+        )
 
     apply: bpy.props.BoolProperty(
         name = "Apply Modifiers",
@@ -3600,8 +3749,11 @@ class addSphere(bpy.types.Operator):
             del bpy.context.active_object['Smooth Shading']
             delete_drivers()
 
-        bpy.context.object.name = "EMC Sphere"
-        bpy.context.object.data.name = "EMC Sphere"
+        if self.rand_col:
+            bpy.context.active_object.color = (random.random(), random.random(), random.random(), 1)
+
+        bpy.context.object.name = self.name
+        bpy.context.object.data.name = self.name
         return{'FINISHED'}
 
 class addTorus(bpy.types.Operator):
@@ -3609,6 +3761,12 @@ class addTorus(bpy.types.Operator):
     bl_idname = "emc.torus"
     bl_description = "Create a Torus Modifier Parametric Primitive"
     bl_options = {'REGISTER', 'UNDO'}
+
+    name: bpy.props.StringProperty(
+        name = "Name", 
+        description = "Name of Object", 
+        default = "EMC Torus",
+    )
 
     mj_segments: bpy.props.IntProperty(
         name = "Major Segments",
@@ -3643,6 +3801,12 @@ class addTorus(bpy.types.Operator):
         description = "Use Smooth Shading",
         default = True,
     )
+
+    rand_col: bpy.props.BoolProperty(
+        name = "Random Color",
+        description = "Give object a random color",
+        default = False,
+        )
 
     apply: bpy.props.BoolProperty(
         name = "Apply Modifiers",
@@ -3745,8 +3909,11 @@ class addTorus(bpy.types.Operator):
             del bpy.context.active_object['Smooth Shading']
             delete_drivers()
 
-        bpy.context.object.name = "EMC Torus"
-        bpy.context.object.data.name = "EMC Torus"
+        if self.rand_col:
+            bpy.context.active_object.color = (random.random(), random.random(), random.random(), 1)
+
+        bpy.context.object.name = self.name
+        bpy.context.object.data.name = self.name
         return{'FINISHED'}
 
 class EmcBevelModal(bpy.types.Operator):
@@ -6546,5 +6713,3 @@ def unregister():
 
 if __name__ == "__main__":
     register()
-    
-#, key_modifier='SPACE'
