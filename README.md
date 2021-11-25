@@ -16,13 +16,12 @@ As it is by default, this menu will not work well out of the box. The selection 
 
 If this is your first time using blender, coming from maya, I suggest you download and install the keymap I have included as well. It's an edited version of the Industry Standard keymap that's included with blender, which I've setup to work with my addon out of the box, and it should work very similarly to maya!
 
-If you'd like to support me, please consider buying the addon on [Gumroad](https://gum.co/emctools) 
 
 **UPDATES:**
 
 ***VERSION 1.2.3 AND LATER:***
 
-CHECK COMMITS
+- CHECK COMMITS
 
 
 ***VERSION 1.2.2:***
