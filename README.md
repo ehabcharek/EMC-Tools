@@ -69,3 +69,19 @@ If you'd like to support me, please consider buying the addon on [Gumroad](https
 - Added a delete keyframes option for the curve editor that doesn't show a popup
 
 - Fixed some things
+
+
+------------------------------------------------------
+
+Donate! (only if you want to)
+
+Paypal:
+https://www.paypal.me/ehabcharek
+
+Ethereum:
+
+<a href="https://www.bitcoinqrcodemaker.com"><img src="https://www.bitcoinqrcodemaker.com/api/?style=ethereum&amp;address=0xd102dFFB113E94946102bB88F75a138924aCCc6A" alt="Ethereum QR Code Generator" height="300" width="300" border="0" /></a>
+
+Bitcoin:
+
+<a href="https://www.bitcoinqrcodemaker.com"><img src="https://www.bitcoinqrcodemaker.com/api/?style=bitcoin&amp;address=bc1qznp3qljeu2ht306f8rwp83y5zkv4rna6z4t3j4" alt="Bitcoin QR Code Generator" height="300" width="300" border="0" /></a>
