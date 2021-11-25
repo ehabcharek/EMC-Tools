@@ -20,6 +20,10 @@ If you'd like to support me, please consider buying the addon on [Gumroad](https
 
 **UPDATES:**
 
+***VERSION 1.2.3 AND LATER:***
+
+CHECK COMMITS
+
 
 ***VERSION 1.2.2:***
 
