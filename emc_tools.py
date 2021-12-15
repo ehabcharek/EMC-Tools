@@ -1403,7 +1403,12 @@ class KnifeProject(bpy.types.Operator):
     
     def execute(self, context):
         try:
+            og_sel = bpy.context.selected_objects
+            og_act = bpy.context.active_object
+            og_sel.remove(og_act)
+            og_sel[0].select_set(False)
             bpy.ops.object.mode_set(mode='EDIT')
+            og_sel[0].select_set(True)
             bpy.ops.mesh.knife_project(cut_through=self.through)
         except:
             self.report({"ERROR"}, "Select a Cut Object (Selection) Then the Surface Object (Active)")
@@ -2000,6 +2005,13 @@ class ProjectCurve(bpy.types.Operator):
     def execute(self, context):
         selection_names = bpy.context.selected_objects
         og = bpy.context.active_object
+        selection_names.remove(og)
+
+        if selection_names[0].type == 'CURVE':
+            self.report({"WARNING"}, "Make sure the handle types are set to ALIGNED")
+        else:
+            self.report({"ERROR"}, "Selection must be a curve object!")
+            return{'FINISHED'}
 
         try:
             bpy.ops.object.mode_set(mode='EDIT')
@@ -2021,13 +2033,14 @@ class ProjectCurve(bpy.types.Operator):
             bpy.ops.object.mode_set(mode='OBJECT')
             for obj in selection_names:
                 obj.select_set(False)
+            og.select_set(False)
         except:
-            self.report({"ERROR"}, "Select Curve Object (Selection) Then the Surface Object (Active)")
+            self.report({"ERROR"}, "Select Curve Object (Selection) Then the Surface Object (Active). Selection must be a curve object!")
             bpy.ops.ed.undo()
 
         bpy.context.view_layer.objects.active = bpy.context.selected_objects[0]
         bpy.ops.object.convert(target='CURVE')
-        bpy.context.object.name = og.name + ".Projected Curve"
+        # bpy.context.object.name = og.name + ".Projected Curve"
         return{'FINISHED'}
 
 class Separate(bpy.types.Operator):
@@ -2241,6 +2254,43 @@ class EMCpatch(bpy.types.Operator):
         default='4 3 5'
         )
 
+    grid: bpy.props.BoolProperty(
+        name = "Grid Fill", 
+        description = "Use Grid Fill", 
+        default = False,
+    )
+
+    interp_simple: bpy.props.BoolProperty(
+        name = "Simple Blending", 
+        description = "Use simple interpolation of grid vertices", 
+        default = False,
+    )
+
+    span: bpy.props.IntProperty(
+        name = "Span", 
+        description = "Number of grid columns", 
+        default = 1,
+    )
+
+    offset: bpy.props.IntProperty(
+        name = "Offset", 
+        description = "Vertex that is corner of the grid", 
+        default = 0,
+    )
+
+    def draw(self, context):
+        layout = self.layout
+        if self.grid:
+            layout.prop(self, "span")
+            layout.prop(self, "offset")
+            layout.prop(self, "interp_simple")
+        else:
+            layout.prop(self, "flip")
+            layout.prop(self, "rotate")
+            layout.prop(self, "relax")
+            layout.prop(self, "snap")
+            layout.prop(self, "priority")
+
     def execute(self, context):
         ob = bpy.context.object
         my_mesh = ob.data
@@ -2276,10 +2326,11 @@ class EMCpatch(bpy.types.Operator):
             else:
                 sides = pri_order[2]
         else:
-            self.report({"ERROR"}, "Selected vertex count must not be a prime number, or a double of one")
+            self.grid = True
             if(len(selected_verts)%2==0):
-                self.report({"WARNING"}, "Try Grid Fill instead")
-            return{'CANCELLED'}
+                bpy.ops.mesh.fill_grid(span=self.span, offset=self.offset, use_interp_simple=self.interp_simple)
+                self.report({"WARNING"}, "Selected vertex count must not be a prime number, or a double of one. Using Grid Fill instead")
+            return{'FINISHED'}
 
         try:
             bpy.ops.object.vertex_group_add()
@@ -6499,6 +6550,23 @@ class ToggleOrbit(bpy.types.Operator):
 
         return{'FINISHED'}
 
+class SmartDelete(bpy.types.Operator):
+    """Delete componentes based on selection mode"""
+    bl_label = "Smart Delete"
+    bl_idname = "emc.smartdel"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
+            bpy.ops.mesh.delete(type='VERT')
+        elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False):
+            bpy.ops.mesh.delete(type='EDGE')
+        elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True):
+            bpy.ops.mesh.delete(type='FACE')
+        else:
+            bpy.ops.wm.call_menu_pie(name="PIE_MT_delete")
+        return{'FINISHED'}
+
 
 classes = (
     VIEW3D_MT_merge,
@@ -6594,6 +6662,7 @@ classes = (
     ViewGroup,
     ToggleColSpc,
     ToggleOrbit,
+    SmartDelete,
 )
 
 addon_keymaps = []
@@ -6635,6 +6704,9 @@ def register():
     addon_keymaps.append((km, kmi))
 
     kmi = km.keymap_items.new("emc.sellink", "LEFTMOUSE", "DOUBLE_CLICK", shift=True) 
+    addon_keymaps.append((km, kmi))
+
+    kmi = km.keymap_items.new("emc.smartdel", "X", "PRESS", alt=True) 
     addon_keymaps.append((km, kmi))
 
 
