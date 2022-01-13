@@ -5814,7 +5814,8 @@ class Purge(bpy.types.Operator):
                     x.face_maps.active_index = 0
                     bpy.ops.object.face_map_remove()
             if self.props:
-                for i in x.keys():
+                og_props = x.keys()
+                for i in og_props:
                     if i == '_RNA_UI' or i == 'cycles':
                         pass
                     else:
@@ -6428,9 +6429,15 @@ class ToggleSubD(bpy.types.Operator):
     
     def execute(self, context):
         og = bpy.context.selected_objects
+        active = bpy.context.active_object
+        if bpy.context.object.mode == 'OBJECT':
+            bpy.ops.object.select_all(action='DESELECT')
         has = False
 
         for obj in og:
+            if bpy.context.object.mode == 'OBJECT':
+                obj.select_set(True)
+                bpy.context.view_layer.objects.active = obj
             for modifier in obj.modifiers:
                 if modifier.type == 'SUBSURF':
                     has = True
@@ -6459,13 +6466,22 @@ class ToggleSubD(bpy.types.Operator):
                             modifier.show_on_cage = False
                             modifier.show_in_editmode = False
         
-        if has == False:
-            bpy.ops.object.modifier_add(type='SUBSURF')
-            bpy.context.object.modifiers[-1].levels = 2
-            bpy.context.object.modifiers[-1].show_only_control_edges = False
-            bpy.context.object.modifiers[-1].show_viewport = True if self.showViewport == "on" else False
-            bpy.context.object.modifiers[-1].show_in_editmode = True if self.showViewport == "on" else False
-            bpy.context.object.modifiers[-1].show_on_cage = True if self.showCage == "on" else False
+            if has == False:
+                bpy.ops.object.modifier_add(type='SUBSURF')
+                bpy.context.object.modifiers[-1].levels = 2
+                bpy.context.object.modifiers[-1].show_only_control_edges = False
+                bpy.context.object.modifiers[-1].show_viewport = True if self.showViewport == "on" else False
+                bpy.context.object.modifiers[-1].show_in_editmode = True if self.showViewport == "on" else False
+                bpy.context.object.modifiers[-1].show_on_cage = True if self.showCage == "on" else False
+
+            if bpy.context.object.mode == 'OBJECT':
+                bpy.ops.object.select_all(action='DESELECT')
+                has = False
+                
+        if bpy.context.object.mode == 'OBJECT':
+            for obj in og:
+                obj.select_set(True)
+            bpy.context.view_layer.objects.active = active
 
         return{'FINISHED'}
 
