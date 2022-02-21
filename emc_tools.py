@@ -133,6 +133,7 @@ class PreferencesNotes(bpy.types.AddonPreferences):
     editmesh: bpy.props.BoolProperty(name = 'Edit Mesh Tools')
     material: bpy.props.BoolProperty(name = 'Material Utilities')
     polyquilt: bpy.props.BoolProperty(name = 'PolyQuilt')
+    maxivs: bpy.props.BoolProperty(name = 'Maxivz Tools')
     uv_unwrap: bpy.props.BoolProperty(name = 'UV Unwrapping function. True = UV Window | False = UV Menu')
     apply: bpy.props.BoolProperty(name = 'Apply modifiers of generated primitives by default')
 
@@ -159,6 +160,7 @@ class PreferencesNotes(bpy.types.AddonPreferences):
         layout.prop(self, "material")
         layout.label(text='- OPTIONAL EXTERNAL ADDON')
         layout.prop(self, "polyquilt")
+        layout.prop(self, "maxivs")
         row = layout.row()
         
         layout.label(text='Search for "EMC" in the Keymap Editor for All Available Shortcuts')
@@ -401,6 +403,11 @@ class VIEW3D_MT_selectMode(Menu):
             other_menu.operator("wm.call_menu", text="Material Utilities", icon = "MATERIAL").name="VIEW3D_MT_materialutilities_main"
         else:
             other_menu.operator("emc.null", text='Material Utilities addon not enabled', icon='ERROR')
+        if bpy.context.object.mode == 'EDIT':
+            other_menu.operator("mesh.region_to_loop", text='Select Boundary Loop', icon='MESH_GRID')
+        else:
+            other_menu.operator("object.select_linked", text='Select Linked', icon='LINKED')
+
         other_menu.separator()
 
         other_menu.operator("emc.facemapmaterial", icon='FACE_MAPS')
@@ -571,7 +578,10 @@ class VIEW3D_MT_EditContext(Menu):
             other_menu = other.column()
 
             other_menu.operator("transform.edge_crease", text='Crease', icon = "SNAP_VOLUME")
-            other_menu.operator("mesh.vert_connect_path", text='Connect Path', icon='CON_FOLLOWTRACK')
+            if 'maxivz_tools' in bpy.context.preferences.addons.keys():
+                other_menu.operator("mesh.super_smart_create", text='Super Smart Create', icon='CON_FOLLOWTRACK')
+            else:
+                other_menu.operator("mesh.vert_connect_path", text='Connect Path', icon='CON_FOLLOWTRACK')
             other_menu.operator("mesh.rip_move", icon='LIBRARY_DATA_BROKEN')
 
             if 'mesh_looptools' in bpy.context.preferences.addons.keys():
@@ -6705,6 +6715,9 @@ def register():
 
     if 'PolyQuilt' in bpy.context.preferences.addons.keys():
         bpy.context.preferences.addons[__name__].preferences.polyquilt = True
+
+    if 'maxivz_tools' in bpy.context.preferences.addons.keys():
+        bpy.context.preferences.addons[__name__].preferences.maxivs = True
 
 
     wm = bpy.context.window_manager  
