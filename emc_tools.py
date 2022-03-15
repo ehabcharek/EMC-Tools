@@ -1949,7 +1949,7 @@ class SmoothFaces(bpy.types.Operator):
                 if self.slow:
                     bpy.ops.mesh.vertices_smooth(factor=1, repeat=(5 ** (self.Cuts-1)), wait_for_input=False)
                 else:
-                    bpy.ops.mesh.vertices_smooth(factor=1, repeat=((self.Cuts*self.Cuts)*1.25), wait_for_input=False)
+                    bpy.ops.mesh.vertices_smooth(factor=1, repeat=int((self.Cuts*self.Cuts)*1.25), wait_for_input=False)
 
         bpy.ops.object.vertex_group_select()
 
