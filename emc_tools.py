@@ -4880,8 +4880,8 @@ class EmcScrewModal(bpy.types.Operator):
                     bpy.context.object.modifiers[-1].screw_offset = 0
                     self.init = False
                     
-                bpy.context.object.modifiers[-1].steps = steps
-                bpy.context.object.modifiers[-1].render_steps = steps
+                bpy.context.object.modifiers[-1].steps = int(steps)
+                bpy.context.object.modifiers[-1].render_steps = int(steps)
                 # print(self.temp_norm + (delta - self.current_mouse_x))
             
         if event.type == 'WHEELUPMOUSE':
@@ -4999,8 +4999,8 @@ class EmcScrewModal(bpy.types.Operator):
             pass  
 
         self.screw = bpy.context.object.modifiers[-1].screw_offset
-        self.angle = bpy.context.object.modifiers[-1].angle
-        self.steps = bpy.context.object.modifiers[-1].steps
+        self.angle = int(bpy.context.object.modifiers[-1].angle)
+        self.steps = int(bpy.context.object.modifiers[-1].steps)
 
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
