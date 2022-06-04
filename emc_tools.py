@@ -2357,7 +2357,7 @@ class EMCpatch(bpy.types.Operator):
             bpy.ops.object.vertex_group_assign()
 
             bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='VERT')
-            bpy.ops.mesh.select_nth(nth=((len(selected_verts)-sides)/sides))
+            bpy.ops.mesh.select_nth(nth=int(((len(selected_verts)-sides)/sides)))
             bpy.ops.mesh.dissolve_verts()
             bpy.ops.object.vertex_group_select()
             bpy.ops.mesh.edge_face_add()
@@ -2373,7 +2373,7 @@ class EMCpatch(bpy.types.Operator):
                 pass
             else:
                 if int_version > 283:
-                    bpy.ops.mesh.bevel(offset_type='WIDTH', offset=1, offset_pct=0, segments=((len(selected_verts)-sides)/sides)-1, affect='EDGES', clamp_overlap=True, loop_slide=True)
+                    bpy.ops.mesh.bevel(offset_type='WIDTH', offset=1, offset_pct=0, segments=int(((len(selected_verts)-sides)/sides)-1), affect='EDGES', clamp_overlap=True, loop_slide=True)
                 else:
                     bpy.ops.mesh.bevel(offset_type='WIDTH', offset=1, offset_pct=0, segments=((len(selected_verts)-sides)/sides)-1, vertex_only=False, clamp_overlap=True, loop_slide=True)
 
