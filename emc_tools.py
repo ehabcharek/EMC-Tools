@@ -5969,8 +5969,9 @@ class ViewGroup(bpy.types.Operator):
 
         bpy.ops.object.modifier_add(type='NODES')
         bpy.context.active_object.modifiers[-1].node_group = bpy.data.node_groups['Vertex Weight Gradient']
-        bpy.context.active_object.modifiers[-1]["Input_5"] = bpy.context.active_object.modifiers[start].vertex_group if self.sel_mod_ver else bpy.context.active_object.vertex_groups[-1].name
-        bpy.context.active_object.modifiers[-1]["Input_7"] = bpy.context.object.data.vertex_colors[-1].name
+        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_5_use_attribute\"]", modifier_name=bpy.context.active_object.modifiers[-1].name)
+        bpy.context.active_object.modifiers[-1]["Input_5_attribute_name"] = bpy.context.active_object.modifiers[start].vertex_group if self.sel_mod_ver else bpy.context.active_object.vertex_groups[-1].name
+        bpy.context.active_object.modifiers[-1]["Output_8_attribute_name"] = bpy.context.object.data.vertex_colors[-1].name
 
         bpy.ops.object.modifier_move_to_index(modifier=bpy.context.active_object.modifiers[-1].name, index=start+1)
 
