@@ -562,10 +562,11 @@ class VIEW3D_MT_EditContext(Menu):
             pie.operator("emc.extrudevert", icon='MOD_WARP')
             pie.operator('wm.call_menu_pie', text='Merge', icon='FULLSCREEN_EXIT').name="Mesh.EMC_MT_Merge"
             pie.operator("wm.toolbar_fallback_pie", text='Selection Type', icon='RESTRICT_SELECT_OFF')
-            if 'mesh_tools' in bpy.context.preferences.addons.keys():
-                pie.operator("mesh.relax", icon='MOD_FLUIDSIM')
-            else:
-                pie.operator("emc.null", text='Edit Mesh Tools addon not enabled', icon='ERROR')  
+            # if 'mesh_tools' in bpy.context.preferences.addons.keys():
+            #     pie.operator("mesh.relax", icon='MOD_FLUIDSIM')
+            # else:
+            #     pie.operator("emc.null", text='Edit Mesh Tools addon not enabled', icon='ERROR')  
+            pie.operator("mesh.vertices_smooth", icon='MOD_FLUIDSIM').factor=1.0
             pie.operator("mesh.dissolve_verts", icon='CANCEL')
             pie.operator('wm.call_menu_pie', text='Vertex Normals', icon='NORMALS_VERTEX').name="emc.vertnorm"
 
@@ -5707,6 +5708,14 @@ class BuildCorner(bpy.types.Operator):
     bl_idname = "emc.buildcorner"
     bl_options = {'REGISTER', 'UNDO'}
 
+    method: bpy.props.EnumProperty(
+        name="Method",
+        items=(("BEAUTY", "BEAUTY", "BEAUTY"),
+               ("CLIP", "CLIP", "CLIP")),
+        description="Triangulation Method",
+        default='BEAUTY'
+        )
+
     angle: bpy.props.FloatProperty(
         name = "Face Angle", 
         description = "Maximum Face Angle", 
@@ -5725,21 +5734,36 @@ class BuildCorner(bpy.types.Operator):
 
     def execute(self, context):
         og_mode = bpy.context.tool_settings.mesh_select_mode[:]
-        bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='VERT')
-
         bpy.ops.mesh.subdivide(number_cuts=1)
-
+        bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='VERT')
         bpy.ops.mesh.select_less(use_face_step=False)
         bpy.ops.mesh.select_more(use_face_step=True)
-            
-        bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
-        bpy.ops.mesh.tris_convert_to_quads(face_threshold=(self.angle * (math.pi/180)), shape_threshold=(self.o_angle * (math.pi/180)))
+        bpy.ops.object.vertex_group_add()
+        bpy.ops.object.vertex_group_assign()
+        bpy.ops.mesh.select_all(action='DESELECT')
+        bpy.ops.mesh.select_face_by_sides(number=4, type='GREATER', extend=True)
+        bpy.ops.object.vertex_group_add()
+        bpy.ops.object.vertex_group_assign()
+        bpy.context.active_object.vertex_groups.active_index = len(bpy.context.active_object.vertex_groups)-2
+        bpy.ops.object.vertex_group_deselect()
+        bpy.ops.object.vertex_group_add()
+        bpy.ops.object.vertex_group_assign()
+        bpy.context.active_object.vertex_groups.active_index = len(bpy.context.active_object.vertex_groups)-2
+        bpy.ops.object.vertex_group_select()
+        bpy.context.active_object.vertex_groups.active_index = len(bpy.context.active_object.vertex_groups)-1
+        bpy.ops.object.vertex_group_deselect()
+        bpy.ops.object.vertex_group_add()
+        bpy.ops.object.vertex_group_assign()
+        bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method=self.method)
         bpy.ops.mesh.select_less(use_face_step=False)
         bpy.ops.mesh.vertices_smooth(factor=1)
-        bpy.ops.mesh.select_more(use_face_step=True)
-        
+        bpy.ops.object.vertex_group_select()
+        bpy.ops.mesh.tris_convert_to_quads(face_threshold=(self.angle * (math.pi/180)), shape_threshold=(self.o_angle * (math.pi/180)), uvs=True)
 
-        bpy.ops.mesh.select_less(use_face_step=False)
+        bpy.ops.object.vertex_group_remove(all=False, all_unlocked=False)
+        bpy.ops.object.vertex_group_remove(all=False, all_unlocked=False)
+        bpy.ops.object.vertex_group_remove(all=False, all_unlocked=False)
+        bpy.ops.object.vertex_group_remove(all=False, all_unlocked=False)
 
         bpy.context.tool_settings.mesh_select_mode[:] = og_mode
         return{'FINISHED'}
