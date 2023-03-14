@@ -182,7 +182,7 @@ class Nothing(bpy.types.Operator):
 
 class VIEW3D_MT_customMenu(Menu):
     bl_label = "EMC Tools Menu"
-    bl_idname = "Mesh.EMC_MT_ToolsMenu"
+    bl_idname = "EMC_MT_ToolsMenu"
     bl_options = {'REGISTER', 'UNDO'}
 
     def draw(self, context):
@@ -216,7 +216,7 @@ class VIEW3D_MT_customMenu(Menu):
         
 class VIEW3D_MT_EmcModifiers(Menu):
     bl_label = "EMC Modifiers Menu"
-    bl_idname = "Mesh.EMC_MT_Modifiers"
+    bl_idname = "EMC_MT_Modifiers"
     bl_options = {'REGISTER', 'UNDO'}
 
     def draw(self, context):
@@ -259,7 +259,7 @@ class VIEW3D_MT_EmcModifiers(Menu):
             other_menu.operator("object.modifier_add", text='SubD Surface', icon = "MOD_SUBSURF").type='SUBSURF'
 
             if bpy.context.active_object.type == 'MESH':
-                other_menu.operator('wm.call_menu_pie', text='EMC Boolean', icon='MOD_BOOLEAN').name="emc.boolmenu"
+                other_menu.operator('wm.call_menu_pie', text='EMC Boolean', icon='MOD_BOOLEAN').name="EMC_MT_Boolmenu"
             else:
                 pie = pie.row()
                 pie.label(text='')
@@ -304,10 +304,9 @@ class VIEW3D_MT_EmcModifiers(Menu):
 
             pie.operator("emc.null", text='Object type not supported or has no modifiers', icon='ERROR')
 
-
 class VIEW3D_MT_Extras(Menu):
     bl_label = "EMC Extras"
-    bl_idname = "Mesh.EMC_MT_Extras"
+    bl_idname = "EMC_MT_Extras"
     bl_options = {'REGISTER', 'UNDO'}
 
     def draw(self, context):
@@ -330,7 +329,7 @@ class VIEW3D_MT_Extras(Menu):
         pie = layout.menu_pie()
 
         if bpy.context.object.mode == 'EDIT':
-            pie.operator('wm.call_menu_pie', text='Symmetry', icon='MOD_MIRROR').name="emc.symmetry"
+            pie.operator('wm.call_menu_pie', text='Symmetry', icon='MOD_MIRROR').name="EMC_MT_Symmetry"
         else:
             pie = pie.row()
             pie.label(text='')
@@ -348,7 +347,7 @@ class VIEW3D_MT_Extras(Menu):
 
 class VIEW3D_MT_selectMode(Menu):
     bl_label = "EMC Selection Mode"
-    bl_idname = "Mesh.EMC_MT_SelectMode"
+    bl_idname = "EMC_MT_SelectMode"
     bl_options = {'REGISTER', 'UNDO'}
 
     def draw(self, context):
@@ -415,7 +414,7 @@ class VIEW3D_MT_selectMode(Menu):
 
 class VIEW3D_MT_Context(Menu):
     bl_label = "EMC Context Menu"
-    bl_idname = "Mesh.EMC_MT_Add"
+    bl_idname = "EMC_MT_Add"
     bl_options = {'REGISTER', 'UNDO'}
 
     def draw(self, context):
@@ -454,7 +453,7 @@ class VIEW3D_MT_Context(Menu):
             other_menu.operator("emc.pipe", icon='META_CAPSULE')
             other_menu.operator("emc.helix", icon='MOD_SCREW')
             if 'add_mesh_extra_objects' in bpy.context.preferences.addons.keys():
-                other_menu.operator('wm.call_menu_pie', text='Gears', icon='SETTINGS').name="emc.gears"
+                other_menu.operator('wm.call_menu_pie', text='Gears', icon='SETTINGS').name="EMC_MT_Gears"
             else:
                 other_menu.operator("emc.null", text='Extra Objects addon not enabled', icon='ERROR')  
             other_menu.operator("mesh.primitive_ico_sphere_add", icon = "MESH_ICOSPHERE") 
@@ -482,7 +481,7 @@ class VIEW3D_MT_Context(Menu):
                 pie.operator("object.mode_set", text='Sculpt Mode', icon='SCULPTMODE_HLT').mode='SCULPT'
                 pie.operator("emc.fillholes", icon='SELECT_SET')
                 pie.operator("emc.loopcut", icon='MOD_MULTIRES')
-                pie.operator('wm.call_menu_pie', text='Smoothing', icon='MATSHADERBALL').name="emc.smoothing"
+                pie.operator('wm.call_menu_pie', text='Smoothing', icon='MATSHADERBALL').name="EMC_MT_Smoothing"
 
                 pie.separator()
                 pie.separator()
@@ -519,7 +518,7 @@ class VIEW3D_MT_Context(Menu):
 
                 other_menu.operator("emc.separate", icon = "MOD_EXPLODE")
                 other_menu.operator("object.join", icon = "SELECT_EXTEND")
-                other_menu.operator('wm.call_menu_pie', text='EMC Boolean', icon='MOD_BOOLEAN').name="emc.boolmenu"
+                other_menu.operator('wm.call_menu_pie', text='EMC Boolean', icon='MOD_BOOLEAN').name="EMC_MT_Boolmenu"
                 other_menu.operator("emc.polydraw", text='Retopo Setup', icon='MESH_GRID')
             else:
                 pie = pie.row()
@@ -538,7 +537,7 @@ class VIEW3D_MT_Context(Menu):
         
 class VIEW3D_MT_EditContext(Menu):
     bl_label = "EMC Edit Mode Context Menu"
-    bl_idname = "Mesh.EMC_MT_Edit"
+    bl_idname = "EMC_MT_Edit"
     bl_options = {'REGISTER', 'UNDO'}
 
     def draw(self, context):
@@ -560,7 +559,7 @@ class VIEW3D_MT_EditContext(Menu):
                 pie.operator("mesh.bevel", icon='MOD_BEVEL').vertex_only=True
 
             pie.operator("emc.extrudevert", icon='MOD_WARP')
-            pie.operator('wm.call_menu_pie', text='Merge', icon='FULLSCREEN_EXIT').name="Mesh.EMC_MT_Merge"
+            pie.operator('wm.call_menu_pie', text='Merge', icon='FULLSCREEN_EXIT').name="EMC_MT_Merge"
             pie.operator("wm.toolbar_fallback_pie", text='Selection Type', icon='RESTRICT_SELECT_OFF')
             # if 'mesh_tools' in bpy.context.preferences.addons.keys():
             #     pie.operator("mesh.relax", icon='MOD_FLUIDSIM')
@@ -568,7 +567,7 @@ class VIEW3D_MT_EditContext(Menu):
             #     pie.operator("emc.null", text='Edit Mesh Tools addon not enabled', icon='ERROR')  
             pie.operator("mesh.vertices_smooth", icon='MOD_FLUIDSIM').factor=1.0
             pie.operator("mesh.dissolve_verts", icon='CANCEL')
-            pie.operator('wm.call_menu_pie', text='Vertex Normals', icon='NORMALS_VERTEX').name="emc.vertnorm"
+            pie.operator('wm.call_menu_pie', text='Vertex Normals', icon='NORMALS_VERTEX').name="EMC_MT_Vertnorm"
 
             pie.separator()
             pie.separator()
@@ -613,11 +612,11 @@ class VIEW3D_MT_EditContext(Menu):
                 pie.operator("emc.extrude", depress=True, icon='EDGESEL')
             else:
                 pie.operator("emc.extrude", depress=False, icon='EDGESEL')
-            pie.operator('wm.call_menu_pie', text='Merge', icon='FULLSCREEN_EXIT').name="Mesh.EMC_MT_Merge"
+            pie.operator('wm.call_menu_pie', text='Merge', icon='FULLSCREEN_EXIT').name="EMC_MT_Merge"
             pie.operator("wm.toolbar_fallback_pie", text='Selection Type', icon='RESTRICT_SELECT_OFF')
-            pie.operator('wm.call_menu_pie', text='Rotate Edge', icon='CON_ROTLIKE').name="emc.rotedge"
+            pie.operator('wm.call_menu_pie', text='Rotate Edge', icon='CON_ROTLIKE').name="EMC_MT_Rotedge"
             pie.operator("mesh.dissolve_edges", icon='CANCEL')
-            pie.operator('wm.call_menu_pie', text='Smoothing', icon='MATSHADERBALL').name="emc.smoothing"
+            pie.operator('wm.call_menu_pie', text='Smoothing', icon='MATSHADERBALL').name="EMC_MT_Smoothing"
 
             pie.separator()
             pie.separator()
@@ -673,14 +672,14 @@ class VIEW3D_MT_EditContext(Menu):
                 pie.operator("emc.extrude", depress=True, icon='EDGESEL')
             else:
                 pie.operator("emc.extrude", depress=False, icon='EDGESEL')
-            pie.operator('wm.call_menu_pie', text='Merge', icon='FULLSCREEN_EXIT').name="Mesh.EMC_MT_Merge"
+            pie.operator('wm.call_menu_pie', text='Merge', icon='FULLSCREEN_EXIT').name="EMC_MT_Merge"
             pie.operator("wm.toolbar_fallback_pie", text='Selection Type', icon='RESTRICT_SELECT_OFF')
             pie.operator('mesh.poke', icon='X')
             if bpy.context.workspace.tools.from_space_view3d_mode("EDIT_MESH", create=False).idname == 'builtin.spin':
                 pie.operator("emc.spin", text='Spin Tool', depress=True, icon='DECORATE_OVERRIDE')
             else:
                 pie.operator("emc.spin", text='Spin Tool', depress=False, icon='DECORATE_OVERRIDE')
-            pie.operator('wm.call_menu_pie', text='Face Normals', icon='NORMALS_FACE').name="emc.vertnorm"
+            pie.operator('wm.call_menu_pie', text='Face Normals', icon='NORMALS_FACE').name="EMC_MT_Vertnorm"
 
             pie.separator()
             pie.separator()
@@ -711,7 +710,7 @@ class VIEW3D_MT_EditContext(Menu):
 
 class VIEW3D_MT_uvMenu(Menu):
     bl_label = "EMC Select UV"
-    bl_idname = "Mesh.EMC_MT_SelectUV"
+    bl_idname = "EMC_MT_SelectUV"
     bl_options = {'REGISTER', 'UNDO'}
 
     def draw(self, context):
@@ -5325,6 +5324,12 @@ class EmcWeightedNormals(bpy.types.Operator):
     bl_idname = "emc.weightmod"
     bl_options = {'REGISTER', 'UNDO'}
     
+    sharp: bpy.props.BoolProperty(
+        name = "Keep Sharp",
+        description = "Keep sharp edges sharp",
+        default = True
+    )
+
     def execute(self, context):
         og = bpy.context.selected_objects
         active = bpy.context.view_layer.objects.active
@@ -5333,7 +5338,7 @@ class EmcWeightedNormals(bpy.types.Operator):
         og_mod = ''
 
         for obj in og:
-            if bpy.context.object.mode == 'OBJECT':
+            if obj.mode == 'OBJECT':
                 bpy.ops.object.select_all(action='DESELECT')
                 obj.select_set(True)
                 bpy.context.view_layer.objects.active = obj
@@ -5345,21 +5350,24 @@ class EmcWeightedNormals(bpy.types.Operator):
                     og_mod = modifier.name
 
             if og_mod == '':
-                bpy.ops.object.modifier_add(type='WEIGHTED_NORMAL')
-                bpy.context.object.modifiers[-1].keep_sharp = sharp
-                bpy.context.object.modifiers[-1].mode = mode
-                bpy.context.object.data.use_auto_smooth = True
                 try:
                     bpy.ops.object.shade_smooth()
                 except:
                     bpy.ops.object.mode_set(mode='OBJECT')
                     bpy.ops.object.shade_smooth()
                     bpy.ops.object.mode_set(mode='EDIT')
-                bpy.context.object.modifiers[-1].show_expanded = False
+
+                bpy.ops.object.modifier_add(type='WEIGHTED_NORMAL')
+                obj.modifiers[-1].keep_sharp = sharp
+                obj.modifiers[-1].mode = mode
+                obj.modifiers[-1].show_expanded = False
+                obj.modifiers[-1].keep_sharp = self.sharp
+
             else:
                 bpy.ops.object.modifier_move_to_index(modifier=og_mod, index=len(bpy.context.active_object.modifiers)-1)
         
         for obj in og:
+            obj.data.use_auto_smooth = True
             obj.select_set(True)
         bpy.context.view_layer.objects.active = active
 
@@ -5759,6 +5767,8 @@ class BuildCorner(bpy.types.Operator):
         bpy.ops.mesh.vertices_smooth(factor=1)
         bpy.ops.object.vertex_group_select()
         bpy.ops.mesh.tris_convert_to_quads(face_threshold=(self.angle * (math.pi/180)), shape_threshold=(self.o_angle * (math.pi/180)), uvs=True)
+        bpy.ops.mesh.select_less(use_face_step=False)
+        bpy.ops.mesh.vertices_smooth(factor=1)
 
         bpy.ops.object.vertex_group_remove(all=False, all_unlocked=False)
         bpy.ops.object.vertex_group_remove(all=False, all_unlocked=False)
@@ -5840,9 +5850,19 @@ class Purge(bpy.types.Operator):
     )
 
     def execute(self, context):
-        for x in bpy.context.selected_objects:
+        og_objs = bpy.context.selected_objects
+        active_obj = bpy.context.active_object
+        properties = []
+
+        for x in og_objs:
+            bpy.ops.object.select_all(action='DESELECT')
+            x.select_set(True)
+            bpy.context.view_layer.objects.active = x
             if self.drivers:
-                delete_drivers()
+                try:
+                    delete_drivers()
+                except:
+                    pass
             if self.face_maps:
                 for i in x.face_maps:
                     x.face_maps.active_index = 0
@@ -5853,7 +5873,15 @@ class Purge(bpy.types.Operator):
                     if i == '_RNA_UI' or i == 'cycles':
                         pass
                     else:
-                        del x[i]
+                        properties.append(i)
+                        # del x[i]
+                for prop in properties:
+                    del x[prop]
+                properties = []
+        
+        for x in og_objs:
+            x.select_set(True)
+        bpy.context.view_layer.objects.active = active_obj
         return{'FINISHED'}
 
 class CustomNormals(bpy.types.Operator):
@@ -6190,7 +6218,7 @@ class AddModifierCustom(bpy.types.Operator):
 class Smoothing(Menu):
     """Soften/Harden Edges"""
     bl_label = 'Smoothing'    
-    bl_idname = 'emc.smoothing'
+    bl_idname = 'EMC_MT_Smoothing'
     bl_description = "Soften/Harden Edges"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -6248,7 +6276,7 @@ class Smoothing(Menu):
 
 class Gears(Menu):
     bl_label = 'Gears'    
-    bl_idname = 'emc.gears'
+    bl_idname = 'EMC_MT_Gears'
     bl_description = "Options for Two Gear Primitives"
 
     def draw(self, context):
@@ -6260,7 +6288,7 @@ class Gears(Menu):
 
 class VIEW3D_MT_merge(Menu):
     bl_label = "EMC Merge"
-    bl_idname = "Mesh.EMC_MT_Merge"
+    bl_idname = "EMC_MT_Merge"
     bl_options = {'REGISTER', 'UNDO'}
 
 
@@ -6283,7 +6311,7 @@ class VIEW3D_MT_merge(Menu):
 class VertNorm(Menu):
     '''Options for Normals'''
     bl_label = 'Normals'    
-    bl_idname = 'emc.vertnorm'
+    bl_idname = 'EMC_MT_Vertnorm'
     bl_description = "Options for Normals"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -6347,7 +6375,7 @@ class VertNorm(Menu):
 
 class RotEdge(Menu):
     bl_label = 'Rotate Edge'    
-    bl_idname = 'emc.rotedge'
+    bl_idname = 'EMC_MT_Rotedge'
     bl_description = "Options for rotating an edge clockwise and counter clockwise"
 
     def draw(self, context):
@@ -6360,7 +6388,7 @@ class RotEdge(Menu):
 
 class BoolMenu(Menu):
     bl_label = 'EMC Booleans'    
-    bl_idname = 'emc.boolmenu'
+    bl_idname = 'EMC_MT_Boolmenu'
     bl_description = "EMC Booleans Options"
 
     def draw(self, context):
@@ -6375,7 +6403,7 @@ class BoolMenu(Menu):
 
 class EmcSymmetry(Menu):
     bl_label = 'Symmetry'    
-    bl_idname = 'emc.symmetry'
+    bl_idname = 'EMC_MT_Symmetry'
     bl_description = "Symmetry Options for Edit Mode"
 
     def draw(self, context):
@@ -6750,11 +6778,11 @@ def register():
     km = wm.keyconfigs.addon.keymaps.new(name="Mesh")
     
     # kmi = km.keymap_items.new("wm.call_menu_pie", "X", "PRESS", shift=True)
-    # kmi.properties.name="Mesh.EMC_MT_Merge"
+    # kmi.properties.name="EMC_MT_Merge"
     # addon_keymaps.append((km, kmi))
 
     kmi = km.keymap_items.new("wm.call_menu_pie", "RIGHTMOUSE", "CLICK_DRAG", shift=True)
-    kmi.properties.name="Mesh.EMC_MT_Edit"  
+    kmi.properties.name="EMC_MT_Edit"  
     addon_keymaps.append((km, kmi))
 
     kmi = km.keymap_items.new("emc.sellink", "LEFTMOUSE", "DOUBLE_CLICK", shift=True) 
@@ -6767,7 +6795,7 @@ def register():
     km = wm.keyconfigs.addon.keymaps.new(name="Object Mode")
 
     kmi = km.keymap_items.new("wm.call_menu_pie", "RIGHTMOUSE", "CLICK_DRAG", shift=True)
-    kmi.properties.name="Mesh.EMC_MT_Add"  
+    kmi.properties.name="EMC_MT_Add"  
     addon_keymaps.append((km, kmi))
 
     # kmi = km.keymap_items.new("wm.call_menu_pie", "B", "PRESS", ctrl=True, shift=True)
@@ -6778,15 +6806,15 @@ def register():
     km = wm.keyconfigs.addon.keymaps.new(name = "3D View", space_type = "VIEW_3D")
 
     kmi = km.keymap_items.new("wm.call_menu_pie", "RIGHTMOUSE", "CLICK_DRAG")
-    kmi.properties.name="Mesh.EMC_MT_SelectMode"
+    kmi.properties.name="EMC_MT_SelectMode"
     addon_keymaps.append((km, kmi))
 
     kmi = km.keymap_items.new("wm.call_menu_pie", "RIGHTMOUSE", "CLICK_DRAG", shift=True, ctrl=True)
-    kmi.properties.name="Mesh.EMC_MT_Extras"  
+    kmi.properties.name="EMC_MT_Extras"  
     addon_keymaps.append((km, kmi))
 
     kmi = km.keymap_items.new("wm.call_menu_pie", "RIGHTMOUSE", "CLICK_DRAG", shift=True, ctrl=True, alt=True)
-    kmi.properties.name="Mesh.EMC_MT_ToolsMenu"  
+    kmi.properties.name="EMC_MT_ToolsMenu"  
     addon_keymaps.append((km, kmi))
 
     kmi = km.keymap_items.new("emc.togglesubd", "V", "PRESS", shift=True, ctrl=True) 
@@ -6796,7 +6824,7 @@ def register():
     addon_keymaps.append((km, kmi))
 
     kmi = km.keymap_items.new("wm.call_menu_pie", "A", "CLICK_DRAG", shift=True, ctrl=True)
-    kmi.properties.name="Mesh.EMC_MT_Modifiers"  
+    kmi.properties.name="EMC_MT_Modifiers"  
     addon_keymaps.append((km, kmi))
 
 
@@ -6809,7 +6837,7 @@ def register():
     km = wm.keyconfigs.addon.keymaps.new(name="UV Editor")
 
     kmi = km.keymap_items.new("wm.call_menu_pie", "RIGHTMOUSE", "CLICK_DRAG")
-    kmi.properties.name="Mesh.EMC_MT_SelectUV"
+    kmi.properties.name="EMC_MT_SelectUV"
     addon_keymaps.append((km, kmi))
 
     km = wm.keyconfigs.addon.keymaps.new(name = "Node Editor", space_type = "NODE_EDITOR")
