@@ -42,7 +42,7 @@ else:
 if len(str(int_version)) < 3:
     int_version *= 10
 
-def bmesh_vert_active(bm):
+def get_active_vert(bm):
     if bm.select_history:
         elem = bm.select_history[-1]
         if isinstance(elem, bmesh.types.BMVert):
@@ -103,14 +103,15 @@ def create_prop(name, value, desc, use_min, use_max, use_lims, use_soft_min, use
     else:
         prop_ui = bpy.context.active_object.id_properties_ui(name)
         prop_ui.update(default=value, description=desc)
-        if use_min:
-            prop_ui.update(min = min)
-        if use_max:
-            prop_ui.update(max = max)
-        if use_soft_min:
-            prop_ui.update(soft_min = soft_min)
-        if use_soft_max:
-            prop_ui.update(soft_max = soft_max)
+        if type(bpy.context.active_object[name]) != bool:
+            if use_min:
+                prop_ui.update(min = min)
+            if use_max:
+                prop_ui.update(max = max)
+            if use_soft_min:
+                prop_ui.update(soft_min = soft_min)
+            if use_soft_max:
+                prop_ui.update(soft_max = soft_max)
 
 def create_driver(mod_name, mod_var, expression, path):
     dr = bpy.context.object.modifiers[mod_name].driver_add(mod_var)
@@ -120,6 +121,83 @@ def create_driver(mod_name, mod_var, expression, path):
     var.type = 'SINGLE_PROP'
     var.targets[0].id = bpy.context.object
     var.targets[0].data_path = path
+
+def get_obj_selection(sort=False):
+    #outputs the active and selected objects
+    #EXAMPLE: act, sel = get_obj_selection(sort=True)
+    selection = bpy.context.selected_objects
+    active = bpy.context.active_object
+    
+    if sort:
+        selection = sorted(selection, key=lambda obj: obj.name)
+        
+    return active, selection
+
+def set_obj_selection(active=None, selected=None):
+    if selected != None:
+        try:
+            if isinstance(selected[0], str):
+                for obj in selected:
+                    bpy.data.objects[obj].select_set(True)
+            else:
+                for obj in selected:
+                    obj.select_set(True)
+                
+        except:
+            if isinstance(selected, str):
+                bpy.data.objects[selected].select_set(True)
+            else:
+                selected.select_set(True)
+
+    if active != None:
+        if isinstance(active, str):
+            bpy.data.objects[active].select_set(True)
+            bpy.context.view_layer.objects.active = bpy.data.objects[active]
+        else:
+            active.select_set(True)
+            bpy.context.view_layer.objects.active = active
+
+def get_modifier_info(obj):
+    #outputs [Modifier Code Reference, Modifier Name, Modifier ID] for each modifier
+    if bpy.data.objects.get(str(obj)):
+        object = bpy.data.objects[obj]
+    else:
+        object = obj
+        
+    mods = [[i for i in range(3)] for j in range(0, len(object.modifiers))]
+    
+    id = 0
+    for mod in object.modifiers:
+        mods[id][0] = mod
+        mods[id][1] = mod.name
+        mods[id][2] = id
+        id += 1
+        
+    #Example
+    #print(mod_info(bpy.context.active_object)[1])
+    
+    return mods
+
+def get_object_properties(obj):
+    if bpy.data.objects.get(str(obj)):
+        object = bpy.data.objects[obj]
+    else:
+        object = obj
+        
+    props = [i for i in object.keys()]
+
+    return props
+
+def check_if_tool_is_active(tool):
+    get_mode = (bpy.context.object.mode + "_" + bpy.context.object.type) if bpy.context.object.mode == 'EDIT' else bpy.context.object.mode
+    return bpy.context.workspace.tools.from_space_view3d_mode(get_mode, create=False).idname == tool
+
+def vertex_colors(obj):
+    if int_version > 320:
+       vc = obj.data.color_attributes
+    else:
+        vc = obj.data.vertex_colors
+    return vc
 
 #-------------------------------------------------------------------
 #Blender required stuff
@@ -311,18 +389,10 @@ class VIEW3D_MT_Extras(Menu):
 
     def draw(self, context):
         layout = self.layout
-
         pie = layout.menu_pie()
 
-        if bpy.context.scene.transform_orientation_slots[0].type == 'GLOBAL':
-            pie.operator("emc.global", depress=True, icon='ORIENTATION_GLOBAL')
-        else:
-            pie.operator("emc.global", depress=False, icon='ORIENTATION_GLOBAL')
-
-        if bpy.context.scene.transform_orientation_slots[0].type == 'GIMBAL':
-            pie.operator("emc.gimbal", depress=True, icon='ORIENTATION_GIMBAL')
-        else:
-            pie.operator("emc.gimbal", depress=False, icon='ORIENTATION_GIMBAL')
+        pie.operator("emc.global", depress=bpy.context.scene.transform_orientation_slots[0].type == 'GLOBAL', icon='ORIENTATION_GLOBAL')
+        pie.operator("emc.gimbal", depress=bpy.context.scene.transform_orientation_slots[0].type == 'GIMBAL', icon='ORIENTATION_GIMBAL')
 
         pie = pie.row()
         pie.label(text='')
@@ -335,15 +405,8 @@ class VIEW3D_MT_Extras(Menu):
             pie.label(text='')
             pie = layout.menu_pie()
 
-        if bpy.context.scene.transform_orientation_slots[0].type == 'LOCAL':
-            pie.operator("emc.local", depress=True, icon='ORIENTATION_LOCAL')
-        else:
-            pie.operator("emc.local", depress=False, icon='ORIENTATION_LOCAL')
-
-        if bpy.context.scene.transform_orientation_slots[0].type == 'NORMAL':
-            pie.operator("emc.normal", depress=True, icon='ORIENTATION_NORMAL')
-        else:
-            pie.operator("emc.normal", depress=False, icon='ORIENTATION_NORMAL')
+        pie.operator("emc.local", depress=bpy.context.scene.transform_orientation_slots[0].type == 'LOCAL', icon='ORIENTATION_LOCAL')
+        pie.operator("emc.normal", depress=bpy.context.scene.transform_orientation_slots[0].type == 'NORMAL', icon='ORIENTATION_NORMAL')
 
 class VIEW3D_MT_selectMode(Menu):
     bl_label = "EMC Selection Mode"
@@ -368,11 +431,10 @@ class VIEW3D_MT_selectMode(Menu):
             pie.operator("emc.edge", depress=True, icon='EDGESEL')
         else:
             pie.operator("emc.edge", depress=False, icon='EDGESEL')
+
         pie.operator("emc.reset", icon='FILE_REFRESH')
-        if bpy.context.object.mode == 'OBJECT':
-            pie.operator("object.mode_set", text='Object Mode', depress=True, icon='OBJECT_DATA').mode='OBJECT'
-        else:
-            pie.operator("object.mode_set", text='Object Mode', depress=False, icon='OBJECT_DATA').mode='OBJECT'
+        pie.operator("object.mode_set", text='Object Mode', depress=(bpy.context.object.mode == 'OBJECT'), icon='OBJECT_DATA').mode='OBJECT'
+
         pie.operator("emc.vertface", icon='SNAP_FACE_CENTER')
         pie.operator("emc.multi", icon='EDITMODE_HLT')
 
@@ -492,10 +554,7 @@ class VIEW3D_MT_Context(Menu):
                 other_menu = other.column()
 
                 other_menu.operator("emc.offsetedge", text='Offset Edge Loop', icon = "ARROW_LEFTRIGHT")
-                if "Subdivision" in bpy.context.object.modifiers:
-                    other_menu.operator("object.subdivision_set", text='Add SubD Modifier', depress=True, icon = "MOD_SUBSURF").level=2
-                else:
-                    other_menu.operator("object.subdivision_set", text='Add SubD Modifier', depress=False, icon = "MOD_SUBSURF").level=2
+                other_menu.operator("object.subdivision_set", text='Add SubD Modifier', depress=("Subdivision" in bpy.context.object.modifiers), icon = "MOD_SUBSURF").level=2
                 
                 other_menu.separator()
 
@@ -505,10 +564,7 @@ class VIEW3D_MT_Context(Menu):
 
                 other_menu.separator()
 
-                if "EMC Mirror" in bpy.context.object.modifiers:
-                    other_menu.operator("emc.mirror", depress=True, icon = "MOD_MIRROR").existing = True
-                else:
-                    other_menu.operator("emc.mirror", depress=False, icon = "MOD_MIRROR").existing = True
+                other_menu.operator("emc.mirror", depress=("EMC Mirror" in bpy.context.object.modifiers), icon = "MOD_MIRROR").existing = True
                 other_menu.operator("object.modifier_add", text='Add Triangulate Modifier', icon = "MOD_TRIANGULATE").type='TRIANGULATE'
                 other_menu.operator("emc.tristoquads", icon = "UV_ISLANDSEL")
                 other_menu.operator("object.modifier_add", text='Add Decimate Modifier', icon = "MOD_DECIM").type='DECIMATE'
@@ -542,16 +598,12 @@ class VIEW3D_MT_EditContext(Menu):
 
     def draw(self, context):
         layout = self.layout
+        pie = layout.menu_pie()
+
+        pie.operator("emc.knife", depress=check_if_tool_is_active('builtin.knife'), icon='MOD_SIMPLIFY')
 
         if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
             # Vertex Select Menu
-
-            pie = layout.menu_pie()
-
-            if bpy.context.workspace.tools.from_space_view3d_mode("EDIT_MESH", create=False).idname == 'builtin.knife':
-                pie.operator("emc.knife", depress=True, icon='MOD_SIMPLIFY')
-            else:
-                pie.operator("emc.knife", depress=False, icon='MOD_SIMPLIFY')
             
             if int_version > 283:
                 pie.operator("mesh.bevel", icon='MOD_BEVEL').affect='VERTICES'
@@ -578,10 +630,12 @@ class VIEW3D_MT_EditContext(Menu):
             other_menu = other.column()
 
             other_menu.operator("transform.edge_crease", text='Crease', icon = "SNAP_VOLUME")
+
             if 'maxivz_tools' in bpy.context.preferences.addons.keys():
                 other_menu.operator("mesh.super_smart_create", text='Super Smart Create', icon='CON_FOLLOWTRACK')
             else:
                 other_menu.operator("mesh.vert_connect_path", text='Connect Path', icon='CON_FOLLOWTRACK')
+
             other_menu.operator("mesh.rip_move", icon='LIBRARY_DATA_BROKEN')
 
             if 'mesh_looptools' in bpy.context.preferences.addons.keys():
@@ -596,22 +650,12 @@ class VIEW3D_MT_EditContext(Menu):
         elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False):
             # Edge Select Menu
 
-            pie = layout.menu_pie()
-
-            if bpy.context.workspace.tools.from_space_view3d_mode("EDIT_MESH", create=False).idname == 'builtin.knife':
-                pie.operator("emc.knife", depress=True, icon='MOD_SIMPLIFY')
-            else:
-                pie.operator("emc.knife", depress=False, icon='MOD_SIMPLIFY')
-
             if int_version > 283:
                 pie.operator("mesh.bevel", icon='MOD_BEVEL').affect='EDGES'
             else:
                 pie.operator("mesh.bevel", icon='MOD_BEVEL').vertex_only=False
 
-            if bpy.context.workspace.tools.from_space_view3d_mode("EDIT_MESH", create=False).idname == 'builtin.extrude_region':
-                pie.operator("emc.extrude", depress=True, icon='EDGESEL')
-            else:
-                pie.operator("emc.extrude", depress=False, icon='EDGESEL')
+            pie.operator("emc.extrude", depress=check_if_tool_is_active("builtin.extrude_region"), icon='EDGESEL')
             pie.operator('wm.call_menu_pie', text='Merge', icon='FULLSCREEN_EXIT').name="EMC_MT_Merge"
             pie.operator("wm.toolbar_fallback_pie", text='Selection Type', icon='RESTRICT_SELECT_OFF')
             pie.operator('wm.call_menu_pie', text='Rotate Edge', icon='CON_ROTLIKE').name="EMC_MT_Rotedge"
@@ -627,18 +671,10 @@ class VIEW3D_MT_EditContext(Menu):
             other_menu = other.column()
 
             other_menu.operator("transform.edge_crease", text='Crease', icon = "SNAP_VOLUME")
-            if bpy.context.workspace.tools.from_space_view3d_mode("EDIT_MESH", create=False).idname == 'builtin.offset_edge_loop_cut':
-                other_menu.operator("emc.offsetedge", text='Offset Edge Loop', depress=True, icon = "ARROW_LEFTRIGHT")
-            else:
-                other_menu.operator("emc.offsetedge", text='Offset Edge Loop', depress=False, icon = "ARROW_LEFTRIGHT")
-            if bpy.context.workspace.tools.from_space_view3d_mode("EDIT_MESH", create=False).idname == 'builtin.loop_cut':
-                other_menu.operator("emc.loopcut", text='Loop Cut', depress=True, icon = "MOD_MULTIRES")
-            else:
-                other_menu.operator("emc.loopcut", text='Loop Cut', depress=False, icon = "MOD_MULTIRES")
-            if bpy.context.workspace.tools.from_space_view3d_mode("EDIT_MESH", create=False).idname == 'builtin.edge_slide':
-                other_menu.operator("emc.edgeslide", text='Edge Slide', depress=True, icon = "OPTIONS")
-            else:
-                other_menu.operator("emc.edgeslide", text='Edge Slide', depress=False, icon = "OPTIONS")
+            other_menu.operator("emc.offsetedge", text='Offset Edge Loop', depress=check_if_tool_is_active("builtin.offset_edge_loop_cut"), icon = "ARROW_LEFTRIGHT")
+            other_menu.operator("emc.loopcut", text='Loop Cut', depress=check_if_tool_is_active("builtin.loop_cut"), icon = "MOD_MULTIRES")
+            other_menu.operator("emc.edgeslide", text='Edge Slide', depress=check_if_tool_is_active("builtin.edge_slide"), icon = "OPTIONS")
+
             if 'mesh_looptools' in bpy.context.preferences.addons.keys():
                 other_menu.operator("mesh.looptools_circle", text='Circularize', icon='MESH_CIRCLE')
             else:
@@ -648,37 +684,26 @@ class VIEW3D_MT_EditContext(Menu):
 
             other_menu.operator("mesh.subdivide", text='Subdivide/Connect',  icon = "SNAP_MIDPOINT").quadcorner='STRAIGHT_CUT'
             other_menu.operator("mesh.bridge_edge_loops", icon = "OUTLINER_OB_LATTICE")
+
             if 'mesh_f2' in bpy.context.preferences.addons.keys():
                 other_menu.operator("mesh.f2", icon = "CLIPUV_DEHLT")
             else:
-                other_menu.operator("emc.null", text='F2 addon not enabled', icon='ERROR')  
+                other_menu.operator("emc.null", text='F2 addon not enabled', icon='ERROR')
+
             other_menu.operator("mesh.rip_move", icon='LIBRARY_DATA_BROKEN')
         else:
             # Any other selection mode menu
-
-            pie = layout.menu_pie()
-
-            if bpy.context.workspace.tools.from_space_view3d_mode("EDIT_MESH", create=False).idname == 'builtin.knife':
-                pie.operator("emc.knife", depress=True, icon='MOD_SIMPLIFY')
-            else:
-                pie.operator("emc.knife", depress=False, icon='MOD_SIMPLIFY')
 
             if int_version > 283:
                 pie.operator("mesh.bevel", icon='MOD_BEVEL').affect='EDGES'
             else:
                 pie.operator("mesh.bevel", icon='MOD_BEVEL').vertex_only=False
 
-            if bpy.context.workspace.tools.from_space_view3d_mode("EDIT_MESH", create=False).idname == 'builtin.extrude_region':
-                pie.operator("emc.extrude", depress=True, icon='EDGESEL')
-            else:
-                pie.operator("emc.extrude", depress=False, icon='EDGESEL')
+            pie.operator("emc.extrude", depress=check_if_tool_is_active("builtin.extrude_region"), icon='EDGESEL')
             pie.operator('wm.call_menu_pie', text='Merge', icon='FULLSCREEN_EXIT').name="EMC_MT_Merge"
             pie.operator("wm.toolbar_fallback_pie", text='Selection Type', icon='RESTRICT_SELECT_OFF')
             pie.operator('mesh.poke', icon='X')
-            if bpy.context.workspace.tools.from_space_view3d_mode("EDIT_MESH", create=False).idname == 'builtin.spin':
-                pie.operator("emc.spin", text='Spin Tool', depress=True, icon='DECORATE_OVERRIDE')
-            else:
-                pie.operator("emc.spin", text='Spin Tool', depress=False, icon='DECORATE_OVERRIDE')
+            pie.operator("emc.spin", text='Spin Tool', depress=check_if_tool_is_active("builtin.spin"), icon='DECORATE_OVERRIDE')
             pie.operator('wm.call_menu_pie', text='Face Normals', icon='NORMALS_FACE').name="EMC_MT_Vertnorm"
 
             pie.separator()
@@ -701,10 +726,7 @@ class VIEW3D_MT_EditContext(Menu):
 
             other_menu.separator()
 
-            if "EMC Mirror" in bpy.context.object.modifiers:
-                other_menu.operator("emc.mirror", depress=True, icon = "MOD_MIRROR").existing = True
-            else:
-                other_menu.operator("emc.mirror", depress=False, icon = "MOD_MIRROR").existing = True
+            other_menu.operator("emc.mirror", depress="EMC Mirror" in bpy.context.object.modifiers, icon = "MOD_MIRROR").existing = True
             other_menu.operator("mesh.separate", icon = "MOD_EDGESPLIT")
             other_menu.operator("emc.weld", icon='TRANSFORM_ORIGINS')
 
@@ -733,28 +755,11 @@ class VIEW3D_MT_uvMenu(Menu):
 
         else:
 
-            if bpy.context.scene.tool_settings.uv_select_mode == 'VERTEX':
-                pie.operator("emc.uvselectmode", text='Vertex', depress=True, icon='UV_VERTEXSEL').mode = 'VERTEX'
-            else:
-                pie.operator("emc.uvselectmode", text='Vertex', depress=False, icon='UV_VERTEXSEL').mode = 'VERTEX'
-
+            pie.operator("emc.uvselectmode", text='Vertex', depress=(bpy.context.scene.tool_settings.uv_select_mode == 'VERTEX'), icon='UV_VERTEXSEL').mode = 'VERTEX'
             pie.operator("wm.call_menu", text='UV Menu', icon='UV').name="VIEW3D_MT_uv_map"
-
-            if bpy.context.scene.tool_settings.uv_select_mode == 'FACE':
-                pie.operator("emc.uvselectmode", text='Face', depress=True, icon='UV_FACESEL').mode = 'FACE'
-            else:
-                pie.operator("emc.uvselectmode", text='Face', depress=False, icon='UV_FACESEL').mode = 'FACE'
-
-            if bpy.context.scene.tool_settings.uv_select_mode == 'EDGE':
-                pie.operator("emc.uvselectmode", text='Edge', depress=True, icon='UV_EDGESEL').mode = 'EDGE'
-            else:
-                pie.operator("emc.uvselectmode", text='Edge', depress=False, icon='UV_EDGESEL').mode = 'EDGE'
-
-            if bpy.context.scene.tool_settings.uv_select_mode == 'ISLAND':
-                pie.operator("emc.uvselectmode", text='Island', depress=True, icon='UV_ISLANDSEL').mode = 'ISLAND'
-            else:
-                pie.operator("emc.uvselectmode", text='Island', depress=False, icon='UV_ISLANDSEL').mode = 'ISLAND'
-
+            pie.operator("emc.uvselectmode", text='Face', depress=(bpy.context.scene.tool_settings.uv_select_mode == 'FACE'), icon='UV_FACESEL').mode = 'FACE'
+            pie.operator("emc.uvselectmode", text='Edge', depress=(bpy.context.scene.tool_settings.uv_select_mode == 'EDGE'), icon='UV_EDGESEL').mode = 'EDGE'
+            pie.operator("emc.uvselectmode", text='Island', depress=(bpy.context.scene.tool_settings.uv_select_mode == 'ISLAND'), icon='UV_ISLANDSEL').mode = 'ISLAND'
             pie.operator("emc.uvselectmode", text='UV Sync Selection', depress=False, icon='UV_SYNC_SELECT').mode = 'SYNC'
 
         pie.operator("uv.mark_seam", text='Clear Seam', icon='META_CUBE').clear = True
@@ -770,10 +775,9 @@ class VIEW3D_MT_uvMenu(Menu):
 
         other_menu.operator("emc.moveislands", icon = "GROUP_UVS")
 
-
 #-------------------------------------------------------------------
 #Custom Operators
-          
+
 class Helix(bpy.types.Operator):
     bl_label = "Helix"
     bl_idname = "emc.helix"
@@ -895,12 +899,7 @@ class Helix(bpy.types.Operator):
         if self.apply:
             bpy.ops.object.convert(target='MESH')
 
-            del bpy.context.active_object['THICC']
-            del bpy.context.active_object['Cross-Segments']
-            del bpy.context.active_object['Width']
-            del bpy.context.active_object['Springiness']
-            del bpy.context.active_object['Iterations']
-            del bpy.context.active_object['Spring Subdivisions']
+            bpy.ops.emc.purge(props=True)
             delete_drivers()
 
         if self.rand_col:
@@ -1023,11 +1022,7 @@ class Pipe(bpy.types.Operator):
         if self.apply:
             bpy.ops.object.convert(target='MESH')
 
-            del bpy.context.active_object['Width']
-            del bpy.context.active_object['Segments']
-            del bpy.context.active_object['THICC']
-            del bpy.context.active_object['Vertical Subdivisions']
-            del bpy.context.active_object['Height']
+            bpy.ops.emc.purge(props=True)
             delete_drivers()
 
         if self.rand_col:
@@ -1150,14 +1145,7 @@ class Prism(bpy.types.Operator):
         if self.apply:
             bpy.ops.object.convert(target='MESH')
 
-            del bpy.context.active_object['Width']
-            del bpy.context.active_object['Cap Subdivision']
-            del bpy.context.active_object['Sides']
-            del bpy.context.active_object['THICC']
-            try:
-                del bpy.context.active_object['Ngon Cap']
-            except:
-                pass
+            bpy.ops.emc.purge(props=True)
             delete_drivers()
 
         if self.rand_col:
@@ -1312,13 +1300,11 @@ class PolyDraw(bpy.types.Operator):
 
         bpy.ops.wm.tool_set_by_id(name="builtin.poly_build")
         bpy.ops.wm.tool_set_by_id(name="mesh_tool.poly_quilt")
-        if bpy.context.workspace.tools.from_space_view3d_mode("EDIT_MESH", create=False).idname == 'mesh_tool.poly_quilt':
+        if check_if_tool_is_active('mesh_tool.poly_quilt'):
             self.report({"INFO"}, "PolyQuilt is installed! using it instead of Poly Build")
-            print("PolyQuilt is installed! using it instead of Poly Build")
             bpy.context.object.data.use_mirror_x = True
         else:
             self.report({"INFO"}, "PolyQuilt is not installed. using Poly Build")
-            print("PolyQuilt is not installed. using Poly Build")
             bpy.ops.object.modifier_add(type='MIRROR')
             bpy.context.object.modifiers["Mirror"].use_clip = True
         bpy.context.scene.tool_settings.use_mesh_automerge = True
@@ -1413,8 +1399,7 @@ class KnifeProject(bpy.types.Operator):
     
     def execute(self, context):
         try:
-            og_sel = bpy.context.selected_objects
-            og_act = bpy.context.active_object
+            og_act, og_sel = get_obj_selection()
             og_sel.remove(og_act)
             og_sel[0].select_set(False)
             bpy.ops.object.mode_set(mode='EDIT')
@@ -1985,8 +1970,7 @@ class EmcMirror(bpy.types.Operator):
 
     def execute(self, context):
         name = "EMC Mirror"
-        objs = bpy.context.selected_objects
-        active = bpy.context.active_object
+        active, objs = get_obj_selection()
 
         if self.existing:
             if name not in bpy.context.object.modifiers:
@@ -2013,8 +1997,7 @@ class ProjectCurve(bpy.types.Operator):
     bl_idname = "emc.projcurve"
 
     def execute(self, context):
-        selection_names = bpy.context.selected_objects
-        og = bpy.context.active_object
+        og, selection_names = get_obj_selection()
         selection_names.remove(og)
 
         if selection_names[0].type == 'CURVE':
@@ -2431,8 +2414,7 @@ class EmcRepeat(bpy.types.Operator):
     )
 
     def execute(self, context):
-        selected = bpy.context.selected_objects
-        active = bpy.context.view_layer.objects.active
+        active, selected = get_obj_selection()
 
         if self.per_obj:
             if bpy.context.object.mode != 'OBJECT':
@@ -2440,8 +2422,7 @@ class EmcRepeat(bpy.types.Operator):
             else:
                 for i in selected:
                     bpy.ops.object.select_all(action='DESELECT')
-                    i.select_set(True)
-                    bpy.context.view_layer.objects.active = i
+                    set_obj_selection(i)
                     if self.script == True:
                         try:
                             script = bpy.data.texts[self.operation]
@@ -2457,9 +2438,7 @@ class EmcRepeat(bpy.types.Operator):
                                 exec(self.operation)
                         except:
                             self.report({"WARNING"}, "Invalid Code")
-                for i in selected:
-                    i.select_set(True)
-                bpy.context.view_layer.objects.active = active
+                    set_obj_selection(active, selected)
 
         else:
             if self.script == True:
@@ -2629,8 +2608,14 @@ class EMCbool(bpy.types.Operator):
         description = "Use the old, original method of using one modifier per object", 
         default = False
     )
+
+    separate: bpy.props.BoolProperty(
+        name = "Separate Cutter", 
+        default = False
+    )
     
     apply: bpy.props.BoolProperty(
+        name = "Apply", 
         default = False
     )
 
@@ -2638,15 +2623,16 @@ class EMCbool(bpy.types.Operator):
         layout = self.layout
         layout.prop(self, "operation")
         if int_version > 290:
-            row = layout.row(align=True)
+            row = layout.column(align=True)
             row.prop(self, "old")
+            if self.operation == "slice":
+                row.prop(self, "separate")
         row = layout.row(align=True)
         row.prop(self, "apply")
 
     def execute(self, context):
+        active, selected = get_obj_selection()
 
-        selected = bpy.context.selected_objects
-        active = bpy.context.view_layer.objects.active
         try:
             selected.remove(active)
         except:
@@ -2660,8 +2646,7 @@ class EMCbool(bpy.types.Operator):
             check_col_viz = False
 
             bpy.ops.object.select_all(action='DESELECT')
-            active.select_set(True)
-            bpy.context.view_layer.objects.active = active
+            set_obj_selection(active)
             bpy.ops.object.modifier_add(type='BOOLEAN')
             bpy.context.object.modifiers[-1].operand_type = 'COLLECTION'
             bpy.context.object.modifiers[-1].show_expanded = False
@@ -2737,8 +2722,7 @@ class EMCbool(bpy.types.Operator):
         else:
             for i in selected:
                 bpy.ops.object.select_all(action='DESELECT')
-                active.select_set(True)
-                bpy.context.view_layer.objects.active = active
+                set_obj_selection(active)
                 bpy.ops.object.modifier_add(type='BOOLEAN')
                 bpy.context.object.modifiers[-1].show_expanded = False
                 bpy.context.object.modifiers[-1].object = i
@@ -2766,15 +2750,22 @@ class EMCbool(bpy.types.Operator):
                     bpy.ops.object.rotation_clear(clear_delta=False)
                     bpy.ops.object.scale_clear(clear_delta=False)
 
+                    if self.separate:
+                        dupli_obj = get_obj_selection()[0]
+                        bpy.ops.object.select_all(action='DESELECT')
+                        set_obj_selection(i)
+                        bpy.ops.object.duplicate_move_linked()
+                        dupli_cutter = get_obj_selection()[0]
+                        dupli_obj.modifiers[-1].object = dupli_cutter
+                        dupli_cutter.parent = dupli_obj
+
                     if self.apply:
                         if int_version > 283:
                             bpy.ops.object.modifier_apply(modifier=bpy.context.object.modifiers[-1].name)
                         else:
                             bpy.ops.object.modifier_apply(apply_as='DATA', modifier=bpy.context.object.modifiers[-1].name)
                 
-                active.select_set(True)
-                i.select_set(True)
-                bpy.context.view_layer.objects.active = active
+                set_obj_selection(active, i)
                 move_to_col(i, "EMC Extras", True, True)
 
         if self.apply:
@@ -2940,8 +2931,7 @@ class addCylinder(bpy.types.Operator):
             new = bpy.context.selected_objects[0]
 
             bpy.ops.object.select_all(action='DESELECT')
-            og.select_set(True)
-            bpy.context.view_layer.objects.active = og
+            set_obj_selection(og)
 
             bpy.ops.object.modifier_add(type='DATA_TRANSFER')
             bpy.context.object.modifiers["DataTransfer"].object = new
@@ -2954,8 +2944,7 @@ class addCylinder(bpy.types.Operator):
             new.select_set(True)
             bpy.ops.object.delete()
 
-            og.select_set(True)
-            bpy.context.view_layer.objects.active = og
+            set_obj_selection(og)
 
             bpy.ops.object.editmode_toggle()
             bpy.ops.mesh.select_all(action='DESELECT')
@@ -2967,15 +2956,7 @@ class addCylinder(bpy.types.Operator):
             bpy.context.tool_settings.mesh_select_mode = og_mode
             bpy.ops.object.editmode_toggle()
 
-            del bpy.context.active_object['Depth']
-            del bpy.context.active_object['Cap Subdivisions']
-            del bpy.context.active_object['Vertices']
-            del bpy.context.active_object['Radius']
-            del bpy.context.active_object['Smooth Shading']
-            try:
-                del bpy.context.active_object['Ngon Cap']
-            except:
-                pass
+            bpy.ops.emc.purge(props=True)
             delete_drivers()
 
         if self.rand_col:
@@ -3106,10 +3087,7 @@ class addPlane(bpy.types.Operator):
             bpy.ops.uv.smart_project()
             bpy.ops.object.editmode_toggle()
 
-            del bpy.context.active_object['X Scale']
-            del bpy.context.active_object['Y Scale']
-            del bpy.context.active_object['X Subdivisions']
-            del bpy.context.active_object['Y Subdivisions']
+            bpy.ops.emc.purge(props=True)
             delete_drivers()
 
         if self.rand_col:
@@ -3277,8 +3255,7 @@ class addCube(bpy.types.Operator):
             new = bpy.context.selected_objects[0]
 
             bpy.ops.object.select_all(action='DESELECT')
-            og.select_set(True)
-            bpy.context.view_layer.objects.active = og
+            set_obj_selection(og)
 
             bpy.ops.object.modifier_add(type='DATA_TRANSFER')
             bpy.context.object.modifiers["DataTransfer"].object = new
@@ -3291,21 +3268,14 @@ class addCube(bpy.types.Operator):
             new.select_set(True)
             bpy.ops.object.delete()
 
-            og.select_set(True)
-            bpy.context.view_layer.objects.active = og
+            set_obj_selection(og)
 
             bpy.ops.object.editmode_toggle()
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.uv.seams_from_islands()
             bpy.ops.object.editmode_toggle()
 
-            del bpy.context.active_object['X Scale']
-            del bpy.context.active_object['Y Scale']
-            del bpy.context.active_object['Z Scale']
-            try:
-                del bpy.context.active_object['Spherize']
-            except:
-                pass
+            bpy.ops.emc.purge(props=True)
             delete_drivers()
 
         if self.rand_col:
@@ -3444,14 +3414,7 @@ class addCircle(bpy.types.Operator):
                 bpy.ops.uv.unwrap(method='ANGLE_BASED', margin=0.05)
                 bpy.ops.object.editmode_toggle()
 
-                del bpy.context.active_object['Subdivisions']
-                try:
-                    del bpy.context.active_object['Ngon Fill']
-                except:
-                    pass
-
-            del bpy.context.active_object['Vertices']
-            del bpy.context.active_object['Radius']
+            bpy.ops.emc.purge(props=True)
             delete_drivers()
 
         if self.rand_col:
@@ -3545,8 +3508,7 @@ class addCone(bpy.types.Operator):
         t_origin.parent = og
         move_to_col(t_origin, 'EMC Extras', True, True)
         bpy.ops.object.select_all(action='DESELECT')
-        og.select_set(True)
-        bpy.context.view_layer.objects.active = og
+        set_obj_selection(og)
 
         bpy.ops.object.modifier_add(type='SCREW')
         bpy.context.object.modifiers[0].name = "Radius | Cap Subdiv"
@@ -3630,8 +3592,7 @@ class addCone(bpy.types.Operator):
             new = bpy.context.selected_objects[0]
 
             bpy.ops.object.select_all(action='DESELECT')
-            og.select_set(True)
-            bpy.context.view_layer.objects.active = og
+            set_obj_selection(og)
 
             bpy.ops.object.modifier_add(type='DATA_TRANSFER')
             bpy.context.object.modifiers["DataTransfer"].object = new
@@ -3645,8 +3606,7 @@ class addCone(bpy.types.Operator):
             t_origin.select_set(True)
             bpy.ops.object.delete()
 
-            og.select_set(True)
-            bpy.context.view_layer.objects.active = og
+            set_obj_selection(og)
 
             bpy.ops.object.editmode_toggle()
             bpy.ops.mesh.select_all(action='DESELECT')
@@ -3658,16 +3618,7 @@ class addCone(bpy.types.Operator):
             bpy.context.tool_settings.mesh_select_mode = og_mode
             bpy.ops.object.editmode_toggle()
 
-            del bpy.context.active_object['Base Radius']
-            del bpy.context.active_object['Cap Subdivision']
-            del bpy.context.active_object['Vertices']
-            del bpy.context.active_object['Smooth Shading']
-            del bpy.context.active_object['Depth']
-            del bpy.context.active_object['Tip Radius']
-            try:
-                del bpy.context.active_object['Ngon Cap']
-            except:
-                pass
+            bpy.ops.emc.purge(props=True)
             delete_drivers()
 
         if self.rand_col:
@@ -3782,8 +3733,7 @@ class addSphere(bpy.types.Operator):
             new = bpy.context.selected_objects[0]
 
             bpy.ops.object.select_all(action='DESELECT')
-            og.select_set(True)
-            bpy.context.view_layer.objects.active = og
+            set_obj_selection(og)
 
             bpy.ops.object.modifier_add(type='DATA_TRANSFER')
             bpy.context.object.modifiers["DataTransfer"].object = new
@@ -3796,18 +3746,14 @@ class addSphere(bpy.types.Operator):
             new.select_set(True)
             bpy.ops.object.delete()
 
-            og.select_set(True)
-            bpy.context.view_layer.objects.active = og
+            set_obj_selection(og)
 
             bpy.ops.object.editmode_toggle()
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.uv.seams_from_islands()
             bpy.ops.object.editmode_toggle()
 
-            del bpy.context.active_object['Radius']
-            del bpy.context.active_object['Rings']
-            del bpy.context.active_object['Segments']
-            del bpy.context.active_object['Smooth Shading']
+            bpy.ops.emc.purge(props=True)
             delete_drivers()
 
         if self.rand_col:
@@ -3941,8 +3887,7 @@ class addTorus(bpy.types.Operator):
             new = bpy.context.selected_objects[0]
 
             bpy.ops.object.select_all(action='DESELECT')
-            og.select_set(True)
-            bpy.context.view_layer.objects.active = og
+            set_obj_selection(og)
 
             bpy.ops.object.modifier_add(type='DATA_TRANSFER')
             bpy.context.object.modifiers["DataTransfer"].object = new
@@ -3955,19 +3900,14 @@ class addTorus(bpy.types.Operator):
             new.select_set(True)
             bpy.ops.object.delete()
 
-            og.select_set(True)
-            bpy.context.view_layer.objects.active = og
+            set_obj_selection(og)
 
             bpy.ops.object.editmode_toggle()
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.uv.seams_from_islands()
             bpy.ops.object.editmode_toggle()
 
-            del bpy.context.active_object['Minor Radius']
-            del bpy.context.active_object['Minor Segments']
-            del bpy.context.active_object['Major Radius']
-            del bpy.context.active_object['Major Segments']
-            del bpy.context.active_object['Smooth Shading']
+            bpy.ops.emc.purge(props=True)
             delete_drivers()
 
         if self.rand_col:
@@ -4389,18 +4329,16 @@ class EmcArrayModal(bpy.types.Operator):
                         bpy.context.object.name = "EMC Array_Instancer"
                         bpy.context.object.data.name = "EMC Array_Instancer"
                         self.inst_obj = bpy.context.active_object.name
-                        bpy.data.objects[self.og_obj].select_set(True)
                         try:
                             bpy.data.objects[self.curve].select_set(True)
                         except:
                             pass
-                        bpy.context.view_layer.objects.active = bpy.data.objects[self.og_obj]
+                        set_obj_selection(self.og_obj)
 
                         bpy.ops.object.modifier_remove(modifier=bpy.data.objects[self.og_obj].modifiers[-1].name)
                         if self.add_deform:
                             bpy.ops.object.modifier_remove(modifier=bpy.data.objects[self.og_obj].modifiers[-1].name)
-                        bpy.context.view_layer.objects.active = bpy.data.objects[self.inst_obj]
-                        bpy.data.objects[self.og_obj].select_set(False)
+                        set_obj_selection(self.inst_obj, self.og_obj)
 
                         bpy.ops.object.modifier_add(type='ARRAY')
                         if self.add_deform:
@@ -4422,15 +4360,13 @@ class EmcArrayModal(bpy.types.Operator):
                             bpy.data.objects[self.curve].select_set(False)
                         except:
                             pass
-                        bpy.data.objects[self.inst_obj].select_set(True)
-                        bpy.context.view_layer.objects.active = bpy.data.objects[self.inst_obj]
+                        set_obj_selection(self.inst_obj)
                         bpy.ops.object.delete()
-                        bpy.data.objects[self.og_obj].select_set(True)
                         try:
                             bpy.data.objects[self.curve].select_set(True)
                         except:
                             pass
-                        bpy.context.view_layer.objects.active = bpy.data.objects[self.og_obj]
+                        set_obj_selection(self.og_obj)
 
                         bpy.ops.object.modifier_add(type='ARRAY')
                         if self.add_deform:
@@ -4499,8 +4435,7 @@ class EmcArrayModal(bpy.types.Operator):
 
                     bpy.ops.object.select_all(action='DESELECT')
 
-                    bpy.data.objects[the_object].select_set(True)
-                    bpy.context.view_layer.objects.active = bpy.data.objects[the_object]
+                    set_obj_selection(the_object)
 
                     if self.add_circle == True:
                         bpy.context.object.modifiers[self.mod_index].use_relative_offset = False
@@ -4532,9 +4467,7 @@ class EmcArrayModal(bpy.types.Operator):
                             bpy.data.objects[self.obj_offset].select_set(True)
                             bpy.ops.object.delete()
 
-                            bpy.data.objects[the_object].select_set(True)
-
-                            bpy.context.view_layer.objects.active = bpy.data.objects[the_object]
+                            set_obj_selection(the_object)
                             bpy.context.object.modifiers[self.mod_index].use_relative_offset = True
                             bpy.context.object.modifiers[self.mod_index].use_constant_offset = False
                             bpy.context.object.modifiers[self.mod_index].use_object_offset = False
@@ -4700,15 +4633,13 @@ class EmcArrayModal(bpy.types.Operator):
                     bpy.data.objects[self.curve].select_set(False)
                 except:
                     pass
-                bpy.data.objects[self.inst_obj].select_set(True)
-                bpy.context.view_layer.objects.active = bpy.data.objects[self.inst_obj]
+                set_obj_selection(self.inst_obj)
                 bpy.ops.object.delete()
-                bpy.data.objects[self.og_obj].select_set(True)
                 try:
                     bpy.data.objects[self.curve].select_set(True)
                 except:
                     pass
-                bpy.context.view_layer.objects.active = bpy.data.objects[self.og_obj]
+                set_obj_selection(self.og_obj)
 
                 bpy.ops.object.modifier_add(type='ARRAY')
                 if self.add_deform:
@@ -4724,11 +4655,9 @@ class EmcArrayModal(bpy.types.Operator):
                 else:
                     bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
                 bpy.ops.object.select_all(action='DESELECT')
-                bpy.data.objects[self.obj_offset].select_set(True)
-                bpy.context.view_layer.objects.active = bpy.data.objects[self.obj_offset]
+                set_obj_selection(self.obj_offset)
                 bpy.ops.object.delete()
-                bpy.data.objects[self.og_obj].select_set(True)
-                bpy.context.view_layer.objects.active = bpy.data.objects[self.og_obj]
+                set_obj_selection(self.og_obj)
             if self.add_deform:
                 bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
             context.area.header_text_set(None)
@@ -4778,8 +4707,7 @@ class EmcArrayModal(bpy.types.Operator):
         bpy.ops.object.modifier_add(type='ARRAY')
 
         if len(bpy.context.selected_objects) == 2:
-            curve = bpy.context.selected_objects
-            active = bpy.context.view_layer.objects.active
+            active, curve = get_obj_selection()
             curve.remove(active)
             self.curve = curve[0].name
             if bpy.data.objects[self.curve].type == 'CURVE':
@@ -5109,9 +5037,7 @@ class EmcDeformModal(bpy.types.Operator):
             bpy.data.objects[self.obj_origin].select_set(True)
             bpy.ops.object.delete()
 
-            bpy.data.objects[self.obj_main].select_set(True)
-
-            bpy.context.view_layer.objects.active = bpy.data.objects[self.obj_main]
+            set_obj_selection(self.obj_main)
 
             if len(bpy.data.collections['EMC Extras'].objects) == 0 and len(bpy.data.collections['EMC Extras'].children) == 0:
                 bpy.data.collections.remove(bpy.data.collections['EMC Extras'])
@@ -5159,8 +5085,7 @@ class EmcDeformModal(bpy.types.Operator):
         origin.matrix_parent_inverse = active.matrix_world.inverted()
 
         bpy.ops.object.select_all(action='DESELECT')
-        active.select_set(True)
-        bpy.context.view_layer.objects.active = active
+        set_obj_selection(active)
 
         bpy.ops.object.modifier_add(type='SIMPLE_DEFORM')
         bpy.context.object.modifiers[-1].deform_method = 'BEND'
@@ -5331,8 +5256,7 @@ class EmcWeightedNormals(bpy.types.Operator):
     )
 
     def execute(self, context):
-        og = bpy.context.selected_objects
-        active = bpy.context.view_layer.objects.active
+        active, og = get_obj_selection()
         sharp = False
         mode = 'FACE_AREA_WITH_ANGLE'
         og_mod = ''
@@ -5340,8 +5264,7 @@ class EmcWeightedNormals(bpy.types.Operator):
         for obj in og:
             if obj.mode == 'OBJECT':
                 bpy.ops.object.select_all(action='DESELECT')
-                obj.select_set(True)
-                bpy.context.view_layer.objects.active = obj
+                set_obj_selection(obj)
 
             for modifier in obj.modifiers:
                 if modifier.type == 'BEVEL':
@@ -5368,8 +5291,7 @@ class EmcWeightedNormals(bpy.types.Operator):
         
         for obj in og:
             obj.data.use_auto_smooth = True
-            obj.select_set(True)
-        bpy.context.view_layer.objects.active = active
+        set_obj_selection(active, og)
 
         return{'FINISHED'}
 
@@ -5585,8 +5507,7 @@ class FaceMapsUV(bpy.types.Operator):
         for obj in og:
             orig_mode = obj.mode
             bpy.ops.object.mode_set(mode='OBJECT')
-            obj.select_set(True)
-            bpy.context.view_layer.objects.active = obj
+            set_obj_selection(obj)
             bpy.ops.object.mode_set(mode='EDIT')
             bm = bmesh.from_edit_mesh(bpy.context.edit_object.data)
             orig_len = len(obj.face_maps)
@@ -5850,14 +5771,12 @@ class Purge(bpy.types.Operator):
     )
 
     def execute(self, context):
-        og_objs = bpy.context.selected_objects
-        active_obj = bpy.context.active_object
+        active_obj, og_objs = get_obj_selection()
         properties = []
 
         for x in og_objs:
             bpy.ops.object.select_all(action='DESELECT')
-            x.select_set(True)
-            bpy.context.view_layer.objects.active = x
+            set_obj_selection(x)
             if self.drivers:
                 try:
                     delete_drivers()
@@ -5879,9 +5798,7 @@ class Purge(bpy.types.Operator):
                     del x[prop]
                 properties = []
         
-        for x in og_objs:
-            x.select_set(True)
-        bpy.context.view_layer.objects.active = active_obj
+        set_obj_selection(active_obj, og_objs)
         return{'FINISHED'}
 
 class CustomNormals(bpy.types.Operator):
@@ -5899,21 +5816,17 @@ class CustomNormals(bpy.types.Operator):
         )
 
     def execute(self, context):
-        selected = bpy.context.selected_objects
-        active = bpy.context.active_object
+        active, selected = get_obj_selection()
 
         for i in selected:
             bpy.ops.object.select_all(action='DESELECT')
-            i.select_set(True)
-            bpy.context.view_layer.objects.active = i
+            set_obj_selection(i)
             if self.whattodo == "clear":
                 bpy.ops.mesh.customdata_custom_splitnormals_clear()
             else:
                 bpy.ops.mesh.customdata_custom_splitnormals_add()
 
-        for i in selected:
-            i.select_set(True)
-        bpy.context.view_layer.objects.active = active
+        set_obj_selection(active, selected)
         return{'FINISHED'}
 
 class SelLinked(bpy.types.Operator):
@@ -5961,20 +5874,26 @@ class ViewGroup(bpy.types.Operator):
             active = ''
             self.sel_mod_ver = False
 
-        if len(bpy.context.active_object.data.vertex_colors) == 0:
-            bpy.ops.mesh.vertex_color_add()
-            bpy.context.active_object.data.vertex_colors[-1].name = "EMC Weight Gradient"
+        if len(vertex_colors(bpy.context.active_object)) == 0:
+            if int_version > 320:
+                bpy.ops.geometry.color_attribute_add(domain='CORNER')
+            else:
+                bpy.ops.mesh.vertex_color_add()
+            vertex_colors(bpy.context.active_object)[-1].name = "EMC Weight Gradient"
             self_added = True
             existing = True
 
         if self_added == False:
-            for i in bpy.context.active_object.data.vertex_colors:
+            for i in vertex_colors(bpy.context.active_object):
                 if i.name.split('.')[0] == "EMC Weight Gradient":
                     existing = True
 
         if not existing:
-            bpy.ops.mesh.vertex_color_add()    
-            bpy.context.active_object.data.vertex_colors[-1].name = "EMC Weight Gradient"
+            if int_version > 320:
+                bpy.ops.geometry.color_attribute_add(domain='CORNER')
+            else:
+                bpy.ops.mesh.vertex_color_add() 
+            vertex_colors(bpy.context.active_object)[-1].name = "EMC Weight Gradient"
 
         if self.del_prev:
             for i in bpy.context.active_object.modifiers:
@@ -5998,7 +5917,7 @@ class ViewGroup(bpy.types.Operator):
                     bpy.ops.object.material_slot_remove()
                 bpy.ops.object.material_slot_add()
                 bpy.context.active_object.material_slots[-1].material = bpy.data.materials['Vertex Group Gradient']
-                bpy.data.materials["Vertex Group Gradient"].node_tree.nodes["Attribute"].attribute_name = bpy.context.object.data.vertex_colors[-1].name
+                bpy.data.materials["Vertex Group Gradient"].node_tree.nodes["Attribute"].attribute_name = vertex_colors(bpy.context.active_object)[-1].name
                 make_face_maps = True
 
         if make_face_maps:
@@ -6023,7 +5942,7 @@ class ViewGroup(bpy.types.Operator):
         bpy.context.active_object.modifiers[-1].node_group = bpy.data.node_groups['Vertex Weight Gradient']
         bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_5_use_attribute\"]", modifier_name=bpy.context.active_object.modifiers[-1].name)
         bpy.context.active_object.modifiers[-1]["Input_5_attribute_name"] = bpy.context.active_object.modifiers[start].vertex_group if self.sel_mod_ver else bpy.context.active_object.vertex_groups[-1].name
-        bpy.context.active_object.modifiers[-1]["Output_8_attribute_name"] = bpy.context.object.data.vertex_colors[-1].name
+        bpy.context.active_object.modifiers[-1]["Output_8_attribute_name"] = vertex_colors(bpy.context.active_object)[-1].name
 
         bpy.ops.object.modifier_move_to_index(modifier=bpy.context.active_object.modifiers[-1].name, index=start+1)
 
@@ -6080,8 +5999,7 @@ class AddModifierCustom(bpy.types.Operator):
                 row.prop(self, "simplify")
 
     def execute(self, context):
-        objs = bpy.context.selected_objects
-        active = bpy.context.active_object
+        active, objs = get_obj_selection()
         objs.remove(active)
 
         if self.modifier == "DECIMATE":
@@ -6102,20 +6020,17 @@ class AddModifierCustom(bpy.types.Operator):
                     bpy.context.object.vertex_groups[-1].name = 'EMC GP_VG_Project'
 
                     bpy.ops.object.select_all(action='DESELECT')
-                    objs[0].select_set(True)
-                    bpy.context.view_layer.objects.active = objs[0]
+                    set_obj_selection(objs[0])
                     bpy.ops.gpencil.convert(type='CURVE', use_timing_data=True)
                     for i in bpy.context.selected_objects:
                         if i != objs[0]:
                             gp_obj = i
 
                     bpy.ops.object.select_all(action='DESELECT')
-                    objs[0].select_set(True)
-                    bpy.context.view_layer.objects.active = objs[0]
+                    set_obj_selection(objs[0])
                     bpy.ops.object.delete(use_global=False)
 
-                    gp_obj.select_set(True)
-                    bpy.context.view_layer.objects.active = gp_obj
+                    set_obj_selection(gp_obj)
                     bpy.ops.object.editmode_toggle()
                     bpy.ops.curve.decimate(ratio=self.simplify)
                     bpy.ops.object.editmode_toggle()
@@ -6132,8 +6047,7 @@ class AddModifierCustom(bpy.types.Operator):
                     move_to_col(gp_obj, "EMC Extras", True, True)
 
                     bpy.ops.object.select_all(action='DESELECT')
-                    active.select_set(True)
-                    bpy.context.view_layer.objects.active = active
+                    set_obj_selection(active)
 
                     bpy.context.object.modifiers[-1].use_vert_data = True
                     bpy.context.object.modifiers[-1].data_types_verts = {'VGROUP_WEIGHTS'}
@@ -6149,8 +6063,7 @@ class AddModifierCustom(bpy.types.Operator):
                         bpy.context.object.vertex_groups[-1].name = 'EMC VG_Project'
 
                         bpy.ops.object.select_all(action='DESELECT')
-                        objs[0].select_set(True)
-                        bpy.context.view_layer.objects.active = objs[0]
+                        set_obj_selection(objs[0])
                         bpy.context.object.display_type = 'BOUNDS'
 
                         bpy.ops.object.editmode_toggle()
@@ -6162,8 +6075,7 @@ class AddModifierCustom(bpy.types.Operator):
                         bpy.ops.object.editmode_toggle()
                         
                         bpy.ops.object.select_all(action='DESELECT')
-                        active.select_set(True)
-                        bpy.context.view_layer.objects.active = active
+                        set_obj_selection(active)
 
                         bpy.context.object.modifiers[-1].use_vert_data = True
                         bpy.context.object.modifiers[-1].data_types_verts = {'VGROUP_WEIGHTS'}
@@ -6211,7 +6123,6 @@ class AddModifierCustom(bpy.types.Operator):
             bpy.context.object.modifiers[-1].factor = 1
         return{'FINISHED'}
 
-
 #-------------------------------------------------------------------
 #Secondary Menus
 
@@ -6233,16 +6144,9 @@ class Smoothing(Menu):
             pie = layout.menu_pie()
 
             pie.operator("emc.anglesharp", text="Mark Sharp by Angle", icon = "ALIASED")
-
-            if bpy.context.space_data.overlay.show_edge_sharp == True:
-                pie.operator("wm.context_toggle", text="Sharp Display", depress =True, icon = "FILE_3D").data_path="space_data.overlay.show_edge_sharp"
-            else:
-                pie.operator("wm.context_toggle", text="Sharp Display", depress =False, icon = "FILE_3D").data_path="space_data.overlay.show_edge_sharp"
-
+            pie.operator("wm.context_toggle", text="Sharp Display", depress =bpy.context.space_data.overlay.show_edge_sharp, icon = "FILE_3D").data_path="space_data.overlay.show_edge_sharp"
             pie.operator("emc.facemapsharp", icon = "FACE_MAPS")
-
             pie.operator("emc.uvselect", text = 'Mark Sharp by Island Bounds', icon = "GROUP_UVS").mark_sharp = True
-
             pie.operator("emc.smooth", text="Clear Sharp", icon = "ANTIALIASED")
 
             pie = pie.row()
@@ -6253,13 +6157,8 @@ class Smoothing(Menu):
 
         else:
             pie.operator("emc.smoothangle", text="Set Autosmooth Angle", icon = "SNAP_PERPENDICULAR")
-            if bpy.context.object.data.use_auto_smooth == True:
-                pie.operator("emc.autosmooth", depress=True, icon = "ALIASED")
-            else:
-                pie.operator("emc.autosmooth", depress=False, icon = "ALIASED")
-
+            pie.operator("emc.autosmooth", depress=bpy.context.object.data.use_auto_smooth, icon = "ALIASED")
             pie.operator("emc.customnormals", text="Clear Custom Split Normals", icon = "REMOVE").whattodo = 'clear'
-
             pie.operator("emc.customnormals", text="Add Custom Split Normals", icon = "ADD").whattodo = 'add'
 
             pie = pie.row()
@@ -6302,7 +6201,7 @@ class VIEW3D_MT_merge(Menu):
         pie.operator("mesh.merge", text='Collapse', icon='SNAP_FACE_CENTER').type='COLLAPSE'
         pie.operator("mesh.merge", text='Merge at Center', icon='SNAP_MIDPOINT').type='CENTER'
         
-        if bmesh_vert_active(bmesh.from_edit_mesh(bpy.context.object.data)) == None:
+        if get_active_vert(bmesh.from_edit_mesh(bpy.context.object.data)) == None:
             pass
         else:
             pie.operator("mesh.merge", text='Merge at First', icon='BACK').type='FIRST'
@@ -6327,11 +6226,7 @@ class VertNorm(Menu):
             pie = layout.menu_pie()
 
             pie.operator("transform.rotate_normal", icon = "ORIENTATION_GIMBAL")
-            if bpy.context.space_data.overlay.show_split_normals == True:
-                pie.operator("wm.context_toggle", text="Vertex Normal View", depress =True, icon = "NORMALS_VERTEX").data_path="space_data.overlay.show_split_normals"
-            else:
-                pie.operator("wm.context_toggle", text="Vertex Normal View", depress =False, icon = "NORMALS_VERTEX").data_path="space_data.overlay.show_split_normals"
-
+            pie.operator("wm.context_toggle", text="Vertex Normal View", depress =bpy.context.space_data.overlay.show_split_normals, icon = "NORMALS_VERTEX").data_path="space_data.overlay.show_split_normals"
 
             pie = pie.row()
             pie.label(text='')
@@ -6354,12 +6249,8 @@ class VertNorm(Menu):
             pie = layout.menu_pie()
 
             pie.operator("mesh.flip_normals", icon = "UV_SYNC_SELECT")
-            if bpy.context.space_data.overlay.show_face_normals == True:
-                pie.operator("wm.context_toggle", text="Face Normal View", depress =True, icon = "NORMALS_FACE").data_path="space_data.overlay.show_face_normals"
-            else:
-                pie.operator("wm.context_toggle", text="Face Normal View", depress =False, icon = "NORMALS_FACE").data_path="space_data.overlay.show_face_normals"
+            pie.operator("wm.context_toggle", text="Face Normal View", depress =bpy.context.space_data.overlay.show_face_normals, icon = "NORMALS_FACE").data_path="space_data.overlay.show_face_normals"
             pie.operator("mesh.normals_make_consistent", text='Recalculate Inside', icon = "FULLSCREEN_EXIT").inside=True
-
 
             pie = pie.row()
             pie.label(text='')
@@ -6419,15 +6310,8 @@ class EmcSymmetry(Menu):
         pie.label(text='')
         pie = layout.menu_pie()
 
-        if bpy.context.object.data.use_mirror_y == True:
-            pie.operator("wm.context_toggle", text='Y Mirror', depress=True, icon='CHECKBOX_HLT').data_path="object.data.use_mirror_y"
-        else:
-            pie.operator("wm.context_toggle", text='Y Mirror', depress=False, icon='EVENT_Y').data_path="object.data.use_mirror_y"
-
-        if bpy.context.object.data.use_mirror_topology == True:
-            pie.operator("wm.context_toggle", text='Topology Mirror', depress=True, icon='CHECKBOX_HLT').data_path="object.data.use_mirror_topology"
-        else:
-            pie.operator("wm.context_toggle", text='Topology Mirror', depress=False, icon='CHECKBOX_DEHLT').data_path="object.data.use_mirror_topology"
+        pie.operator("wm.context_toggle", text='Y Mirror', depress=bpy.context.object.data.use_mirror_y, icon=('CHECKBOX_HLT' if bpy.context.object.data.use_mirror_y else 'EVENT_Y')).data_path="object.data.use_mirror_y"
+        pie.operator("wm.context_toggle", text='Topology Mirror', depress=bpy.context.object.data.use_mirror_topology, icon=('CHECKBOX_HLT' if bpy.context.object.data.use_mirror_topology else 'CHECKBOX_DEHLT')).data_path="object.data.use_mirror_topology"
 
         pie = pie.row()
         pie.label(text='')
@@ -6437,15 +6321,8 @@ class EmcSymmetry(Menu):
         pie.label(text='')
         pie = layout.menu_pie()
         
-        if bpy.context.object.data.use_mirror_x == True:
-            pie.operator("wm.context_toggle", text='X Mirror', depress=True, icon='CHECKBOX_HLT').data_path="object.data.use_mirror_x"
-        else:
-            pie.operator("wm.context_toggle", text='X Mirror', depress=False, icon='EVENT_X').data_path="object.data.use_mirror_x"
-
-        if bpy.context.object.data.use_mirror_z == True:
-            pie.operator("wm.context_toggle", text='Z Mirror', depress=True, icon='CHECKBOX_HLT').data_path="object.data.use_mirror_z"
-        else:
-            pie.operator("wm.context_toggle", text='Z Mirror', depress=False, icon='EVENT_Z').data_path="object.data.use_mirror_z"
+        pie.operator("wm.context_toggle", text='X Mirror', depress=bpy.context.object.data.use_mirror_x, icon=('CHECKBOX_HLT' if bpy.context.object.data.use_mirror_x else 'EVENT_X')).data_path="object.data.use_mirror_x"
+        pie.operator("wm.context_toggle", text='Z Mirror', depress=bpy.context.object.data.use_mirror_z, icon=('CHECKBOX_HLT' if bpy.context.object.data.use_mirror_z else 'EVENT_Z')).data_path="object.data.use_mirror_z"
 
 
 #-------------------------------------------------------------------
@@ -6491,16 +6368,14 @@ class ToggleSubD(bpy.types.Operator):
         row.prop(self, "showCage")
     
     def execute(self, context):
-        og = bpy.context.selected_objects
-        active = bpy.context.active_object
+        active, og = get_obj_selection()
         if bpy.context.object.mode == 'OBJECT':
             bpy.ops.object.select_all(action='DESELECT')
         has = False
 
         for obj in og:
             if bpy.context.object.mode == 'OBJECT':
-                obj.select_set(True)
-                bpy.context.view_layer.objects.active = obj
+                set_obj_selection(obj)
             for modifier in obj.modifiers:
                 if modifier.type == 'SUBSURF':
                     has = True
@@ -6542,9 +6417,7 @@ class ToggleSubD(bpy.types.Operator):
                 has = False
                 
         if bpy.context.object.mode == 'OBJECT':
-            for obj in og:
-                obj.select_set(True)
-            bpy.context.view_layer.objects.active = active
+            set_obj_selection(active, og)
 
         return{'FINISHED'}
 
