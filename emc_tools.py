@@ -199,6 +199,67 @@ def vertex_colors(obj):
         vc = obj.data.vertex_colors
     return vc
 
+def select_attribute(attribute):
+    obj = bpy.context.active_object
+    obj.data.attributes.active_index = 0
+    
+    for att in obj.data.attributes:
+        if att.name == attribute:
+            return obj.data.attributes.active_index
+        obj.data.attributes.active_index += 1
+
+def face_group_select(attribute, select=True, vert=False):
+    # create tool
+    if not bpy.data.node_groups.get("select face group"):
+        bpy.ops.node.new_geometry_nodes_modifier()
+        group = bpy.context.active_object.modifiers[-1].node_group
+        group.name = "select face group"
+        group.is_tool = True
+        bpy.context.active_object.modifiers.remove(bpy.context.active_object.modifiers[-1])
+        nAttribute = group.nodes.new('GeometryNodeInputNamedAttribute')
+        comp = group.nodes.new("FunctionNodeCompare")
+        set_sel = group.nodes.new("GeometryNodeToolSetSelection")
+        get_sel = group.nodes.new("GeometryNodeToolSelection")
+        math = group.nodes.new("ShaderNodeMath")
+        
+        comp.operation = 'EQUAL'
+        comp.inputs['B'].default_value = 1
+        set_sel.domain = 'FACE'
+        group.links.new(nAttribute.outputs['Attribute'], comp.inputs['A'])
+        group.links.new(get_sel.outputs['Selection'], math.inputs[0])
+        group.links.new(comp.outputs['Result'], math.inputs[1])
+        group.links.new(math.outputs['Value'], set_sel.inputs['Selection'])
+        group.links.new(group.nodes['Group Input'].outputs['Geometry'], set_sel.inputs['Geometry'])
+        group.links.new(set_sel.outputs['Geometry'], group.nodes['Group Output'].inputs['Geometry'])
+    else:
+        group = bpy.data.node_groups['select face group']
+        nAttribute = group.nodes['Named Attribute']
+        math = group.nodes['Math']
+        set_sel = group.nodes['Set Selection']
+
+    math.operation = 'ADD' if select else 'SUBTRACT'
+    set_sel.domain = 'POINT' if vert else 'FACE'
+    nAttribute.inputs['Name'].default_value = attribute
+    bpy.ops.geometry.execute_node_group(name="select face group")
+
+def face_group_add(name="FaceMap"):
+    if int_version < 400:
+        bpy.ops.object.face_map_add()
+    else:
+        bpy.context.active_object.data.attributes.new(name, "FLOAT", "FACE")
+
+def face_group_assign(attribute):
+    if int_version < 400:
+        bpy.ops.object.face_map_assign()
+    else:
+        select_attribute(attribute)
+        bpy.ops.mesh.attribute_set(value_float=1)
+
+def face_group_remove(attribute):
+    if int_version < 400:
+        bpy.ops.object.face_map_remove()
+    else:
+        bpy.context.active_object.data.attributes.remove(bpy.context.active_object.data.attributes[attribute])
 #-------------------------------------------------------------------
 #Blender required stuff
 
@@ -261,7 +322,7 @@ class Nothing(bpy.types.Operator):
 class VIEW3D_MT_customMenu(Menu):
     bl_label = "EMC Tools Menu"
     bl_idname = "EMC_MT_ToolsMenu"
-    bl_options = {'REGISTER', 'UNDO'}
+    # bl_options = {'REGISTER', 'UNDO'}
 
     def draw(self, context):
 
@@ -295,7 +356,7 @@ class VIEW3D_MT_customMenu(Menu):
 class VIEW3D_MT_EmcModifiers(Menu):
     bl_label = "EMC Modifiers Menu"
     bl_idname = "EMC_MT_Modifiers"
-    bl_options = {'REGISTER', 'UNDO'}
+    # bl_options = {'REGISTER', 'UNDO'}
 
     def draw(self, context):
         layout = self.layout
@@ -385,7 +446,7 @@ class VIEW3D_MT_EmcModifiers(Menu):
 class VIEW3D_MT_Extras(Menu):
     bl_label = "EMC Extras"
     bl_idname = "EMC_MT_Extras"
-    bl_options = {'REGISTER', 'UNDO'}
+    # bl_options = {'REGISTER', 'UNDO'}
 
     def draw(self, context):
         layout = self.layout
@@ -411,7 +472,7 @@ class VIEW3D_MT_Extras(Menu):
 class VIEW3D_MT_selectMode(Menu):
     bl_label = "EMC Selection Mode"
     bl_idname = "EMC_MT_SelectMode"
-    bl_options = {'REGISTER', 'UNDO'}
+    # bl_options = {'REGISTER', 'UNDO'}
 
     def draw(self, context):
         layout = self.layout
@@ -471,13 +532,14 @@ class VIEW3D_MT_selectMode(Menu):
 
         other_menu.separator()
 
-        other_menu.operator("emc.facemapmaterial", icon='FACE_MAPS')
-        other_menu.operator("emc.islandmaps", icon = "UV_DATA")
+        if int_version < 400:
+            other_menu.operator("emc.facemapmaterial", icon='FACE_MAPS')
+            other_menu.operator("emc.islandmaps", icon = "UV_DATA")
 
 class VIEW3D_MT_Context(Menu):
     bl_label = "EMC Context Menu"
     bl_idname = "EMC_MT_Add"
-    bl_options = {'REGISTER', 'UNDO'}
+    # bl_options = {'REGISTER', 'UNDO'}
 
     def draw(self, context):
         layout = self.layout
@@ -594,7 +656,7 @@ class VIEW3D_MT_Context(Menu):
 class VIEW3D_MT_EditContext(Menu):
     bl_label = "EMC Edit Mode Context Menu"
     bl_idname = "EMC_MT_Edit"
-    bl_options = {'REGISTER', 'UNDO'}
+    # bl_options = {'REGISTER', 'UNDO'}
 
     def draw(self, context):
         layout = self.layout
@@ -733,7 +795,7 @@ class VIEW3D_MT_EditContext(Menu):
 class VIEW3D_MT_uvMenu(Menu):
     bl_label = "EMC Select UV"
     bl_idname = "EMC_MT_SelectUV"
-    bl_options = {'REGISTER', 'UNDO'}
+    # bl_options = {'REGISTER', 'UNDO'}
 
     def draw(self, context):
         layout = self.layout
@@ -1794,7 +1856,7 @@ class SmoothFaces(bpy.types.Operator):
     outer: bpy.props.BoolProperty(
         name = "Smooth Outer Edges", 
         description = "Include Non-Manifold Outer Edges in the Smoothing Process", 
-        default = False,
+        default = True,
     )
 
     customSmoothing: bpy.props.BoolProperty(
@@ -1820,7 +1882,7 @@ class SmoothFaces(bpy.types.Operator):
     cleanup: bpy.props.BoolProperty(
         name = "Cleanup", 
         description = "Cleanup Neighboring Faces. In Some Cases, Having this Option Enabled Will Delete Some Details", 
-        default = True,
+        default = False,
     )
 
     dissolve1: bpy.props.BoolProperty(
@@ -1832,7 +1894,7 @@ class SmoothFaces(bpy.types.Operator):
     dissolve2: bpy.props.BoolProperty(
         name = "Post-Dissolve Method", 
         description = "True = Limited Dissolve, False = Edge Dissolve. Dissolve method used on the second pass. Only applicable if Cleanup is enabled", 
-        default = False,
+        default = True,
     )
 
     slow: bpy.props.BoolProperty(
@@ -1852,8 +1914,8 @@ class SmoothFaces(bpy.types.Operator):
         bpy.ops.object.vertex_group_add()
         bpy.context.scene.tool_settings.vertex_group_weight = 1
         bpy.ops.object.vertex_group_assign()
-        bpy.ops.object.face_map_add()
-        bpy.ops.object.face_map_assign()
+        face_group_add("EMC_Face_Group")
+        face_group_assign("EMC_Face_Group")
 
         selected_edges = [edge for edge in bm.edges if edge.select]
         init_verts = [vertex for vertex in bm.verts if vertex.select]
@@ -1874,7 +1936,7 @@ class SmoothFaces(bpy.types.Operator):
             if i not in init_verts:
                 poke_verts.append(i)
         bpy.ops.mesh.select_all(action='DESELECT')
-        bpy.ops.object.face_map_select()
+        face_group_select("EMC_Face_Group")
         bpy.ops.mesh.poke()
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.context.object.vertex_groups.active_index = len(bpy.context.object.vertex_groups)-2
@@ -1901,7 +1963,7 @@ class SmoothFaces(bpy.types.Operator):
         if self.cleanup:
             try:
                 # bpy.ops.mesh.select_similar(type='COPLANAR', threshold=0.01)
-                bpy.ops.object.face_map_deselect()
+                face_group_select("EMC_Face_Group", False, True)    
                 if self.dissolve2:
                     bpy.ops.mesh.dissolve_limited()
                 else:
@@ -1910,7 +1972,7 @@ class SmoothFaces(bpy.types.Operator):
                 pass
         
         bpy.ops.mesh.select_all(action='DESELECT')
-        bpy.ops.object.face_map_select()
+        face_group_select("EMC_Face_Group")
 
         if self.outer:
             bpy.ops.mesh.select_less()
@@ -1941,10 +2003,10 @@ class SmoothFaces(bpy.types.Operator):
         if not self.outer:
             bpy.ops.mesh.select_more()
             if self.Cuts == 1:
-                bpy.ops.object.face_map_select()
+                face_group_select("EMC_Face_Group")
 
         bpy.ops.object.vertex_group_remove(all=False, all_unlocked=False)
-        bpy.ops.object.face_map_remove()
+        # face_group_remove("EMC_Face_Group")
         return{'FINISHED'}
 
 class EmcMirror(bpy.types.Operator):
@@ -2205,7 +2267,7 @@ class EMCpatch(bpy.types.Operator):
     """Patch a hole with an even number of vertices (ORIGINAL EDGES MUST HAVE FACES)"""
     bl_label = "Patch Fill"
     bl_idname = "emc.patchfill"
-    bl_options = {'REGISTER', 'UNDO', 'UNDO_GROUPED'}
+    bl_options = {'REGISTER', 'UNDO'}
 
     flip: bpy.props.BoolProperty(
         name = "Flip Normals", 
@@ -5770,6 +5832,13 @@ class Purge(bpy.types.Operator):
         default = False
     )
 
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "drivers")
+        if int_version < 400:
+            layout.prop(self, "face_maps")
+        layout.prop(self, "props")
+
     def execute(self, context):
         active_obj, og_objs = get_obj_selection()
         properties = []
@@ -6131,7 +6200,7 @@ class Smoothing(Menu):
     bl_label = 'Smoothing'    
     bl_idname = 'EMC_MT_Smoothing'
     bl_description = "Soften/Harden Edges"
-    bl_options = {'REGISTER', 'UNDO'}
+    # bl_options = {'REGISTER', 'UNDO'}
 
     def draw(self, context):
         layout = self.layout
@@ -6145,7 +6214,14 @@ class Smoothing(Menu):
 
             pie.operator("emc.anglesharp", text="Mark Sharp by Angle", icon = "ALIASED")
             pie.operator("wm.context_toggle", text="Sharp Display", depress =bpy.context.space_data.overlay.show_edge_sharp, icon = "FILE_3D").data_path="space_data.overlay.show_edge_sharp"
-            pie.operator("emc.facemapsharp", icon = "FACE_MAPS")
+            
+            if int_version < 400:
+                pie.operator("emc.facemapsharp", icon = "FACE_MAPS")
+            else:
+                pie = pie.row()
+                pie.label(text='')
+                pie = layout.menu_pie()
+
             pie.operator("emc.uvselect", text = 'Mark Sharp by Island Bounds', icon = "GROUP_UVS").mark_sharp = True
             pie.operator("emc.smooth", text="Clear Sharp", icon = "ANTIALIASED")
 
@@ -6188,7 +6264,7 @@ class Gears(Menu):
 class VIEW3D_MT_merge(Menu):
     bl_label = "EMC Merge"
     bl_idname = "EMC_MT_Merge"
-    bl_options = {'REGISTER', 'UNDO'}
+    # bl_options = {'REGISTER', 'UNDO'}
 
 
     def draw(self, context):
@@ -6212,7 +6288,7 @@ class VertNorm(Menu):
     bl_label = 'Normals'    
     bl_idname = 'EMC_MT_Vertnorm'
     bl_description = "Options for Normals"
-    bl_options = {'REGISTER', 'UNDO'}
+    # bl_options = {'REGISTER', 'UNDO'}
 
 
     def draw(self, context):
