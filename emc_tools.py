@@ -34,13 +34,10 @@ from bpy.types import Menu, Operator
 #-------------------------------------------------------------------
 #Setting up some stuff
 
-version = bpy.app.version
-if version[1] == 0:
-    int_version = int(str(version[0])+str(version[1])+str(version[2]))
-else:
-    int_version = int(str(version[0])+str(version[1]))
-if len(str(int_version)) < 3:
-    int_version *= 10
+str_version = ''
+for num in bpy.app.version:
+    str_version = str_version + str(num)
+int_version = int(str_version)
 
 def get_active_vert(bm):
     if bm.select_history:
@@ -269,7 +266,7 @@ class PreferencesNotes(bpy.types.AddonPreferences):
     looptools: bpy.props.BoolProperty(name = 'Loop Tools')
     extraObjects: bpy.props.BoolProperty(name = 'Extra Objects')
     f2: bpy.props.BoolProperty(name = 'F2')
-    editmesh: bpy.props.BoolProperty(name = 'Edit Mesh Tools')
+    # editmesh: bpy.props.BoolProperty(name = 'Edit Mesh Tools')
     material: bpy.props.BoolProperty(name = 'Material Utilities')
     polyquilt: bpy.props.BoolProperty(name = 'PolyQuilt')
     maxivs: bpy.props.BoolProperty(name = 'Maxivz Tools')
@@ -295,7 +292,7 @@ class PreferencesNotes(bpy.types.AddonPreferences):
         layout.prop(self, "looptools")
         layout.prop(self, "extraObjects")
         layout.prop(self, "f2")
-        layout.prop(self, "editmesh")
+        # layout.prop(self, "editmesh")
         layout.prop(self, "material")
         layout.label(text='- OPTIONAL EXTERNAL ADDON')
         layout.prop(self, "polyquilt")
@@ -521,7 +518,8 @@ class VIEW3D_MT_selectMode(Menu):
         elif bpy.context.object.mode == 'OBJECT':
             other_menu.operator("object.select_all", text = "Invert Selection", icon = "ARROW_LEFTRIGHT").action='INVERT'
         other_menu.operator("emc.selsim", icon = "FACE_MAPS")
-        if 'materials_utils' in bpy.context.preferences.addons.keys():
+        materials_utils = 'materials_utils' if int_version < 420 else "bl_ext.blender_org.material_utilities"
+        if materials_utils in bpy.context.preferences.addons.keys():
             other_menu.operator("wm.call_menu", text="Material Utilities", icon = "MATERIAL").name="VIEW3D_MT_materialutilities_main"
         else:
             other_menu.operator("emc.null", text='Material Utilities addon not enabled', icon='ERROR')
@@ -548,11 +546,13 @@ class VIEW3D_MT_Context(Menu):
 
         if bpy.context.selected_objects == []:
             # ADD MENU
+            extra_objects = 'add_mesh_extra_objects' if int_version < 420 else "bl_ext.blender_org.extra_mesh_objects"
 
             pie.operator("emc.cylinder", icon='MESH_CYLINDER')
             pie.operator("emc.sphere", icon='MESH_UVSPHERE')
             pie.operator("emc.cube", icon='MESH_CUBE')
-            if 'add_mesh_extra_objects' in bpy.context.preferences.addons.keys():
+
+            if extra_objects in bpy.context.preferences.addons.keys():
                 pie.operator("mesh.primitive_emptyvert_add", icon='DECORATE')
             else:
                 pie.operator("emc.null", text='Extra Objects addon not enabled', icon='ERROR')  
@@ -569,14 +569,14 @@ class VIEW3D_MT_Context(Menu):
             gap.scale_y = 7
             other_menu = other.column()
 
-            if 'add_mesh_extra_objects' in bpy.context.preferences.addons.keys():
+            if extra_objects in bpy.context.preferences.addons.keys():
                 other_menu.operator("mesh.primitive_solid_add", icon = "SEQ_CHROMA_SCOPE")
             else:
                 other_menu.operator("emc.null", text='Extra Objects addon not enabled', icon='ERROR')                  
             other_menu.operator("emc.prism", icon='OUTLINER_OB_MESH')
             other_menu.operator("emc.pipe", icon='META_CAPSULE')
             other_menu.operator("emc.helix", icon='MOD_SCREW')
-            if 'add_mesh_extra_objects' in bpy.context.preferences.addons.keys():
+            if extra_objects in bpy.context.preferences.addons.keys():
                 other_menu.operator('wm.call_menu_pie', text='Gears', icon='SETTINGS').name="EMC_MT_Gears"
             else:
                 other_menu.operator("emc.null", text='Extra Objects addon not enabled', icon='ERROR')  
@@ -662,6 +662,8 @@ class VIEW3D_MT_EditContext(Menu):
         layout = self.layout
         pie = layout.menu_pie()
 
+        looptools = 'mesh_looptools' if int_version < 420 else "bl_ext.blender_org.looptools"
+
         pie.operator("emc.knife", depress=check_if_tool_is_active('builtin.knife'), icon='MOD_SIMPLIFY')
 
         if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
@@ -700,7 +702,7 @@ class VIEW3D_MT_EditContext(Menu):
 
             other_menu.operator("mesh.rip_move", icon='LIBRARY_DATA_BROKEN')
 
-            if 'mesh_looptools' in bpy.context.preferences.addons.keys():
+            if looptools in bpy.context.preferences.addons.keys():
                 other_menu.operator("mesh.looptools_circle", text='Circularize', icon='MESH_CIRCLE')
             else:
                 other_menu.operator("emc.null", text='Loop Tools addon not enabled', icon='ERROR')   
@@ -737,7 +739,7 @@ class VIEW3D_MT_EditContext(Menu):
             other_menu.operator("emc.loopcut", text='Loop Cut', depress=check_if_tool_is_active("builtin.loop_cut"), icon = "MOD_MULTIRES")
             other_menu.operator("emc.edgeslide", text='Edge Slide', depress=check_if_tool_is_active("builtin.edge_slide"), icon = "OPTIONS")
 
-            if 'mesh_looptools' in bpy.context.preferences.addons.keys():
+            if looptools in bpy.context.preferences.addons.keys():
                 other_menu.operator("mesh.looptools_circle", text='Circularize', icon='MESH_CIRCLE')
             else:
                 other_menu.operator("emc.null", text='Loop Tools addon not enabled', icon='ERROR')  
@@ -746,8 +748,9 @@ class VIEW3D_MT_EditContext(Menu):
 
             other_menu.operator("mesh.subdivide", text='Subdivide/Connect',  icon = "SNAP_MIDPOINT").quadcorner='STRAIGHT_CUT'
             other_menu.operator("mesh.bridge_edge_loops", icon = "OUTLINER_OB_LATTICE")
-
-            if 'mesh_f2' in bpy.context.preferences.addons.keys():
+            
+            f2 = 'mesh_f2' if int_version < 420 else "bl_ext.blender_org.f2"
+            if f2 in bpy.context.preferences.addons.keys():
                 other_menu.operator("mesh.f2", icon = "CLIPUV_DEHLT")
             else:
                 other_menu.operator("emc.null", text='F2 addon not enabled', icon='ERROR')
@@ -777,7 +780,7 @@ class VIEW3D_MT_EditContext(Menu):
             other_menu = other.column()
 
             other_menu.operator("emc.smoothfaces", icon = "MOD_SMOOTH")
-            if 'mesh_looptools' in bpy.context.preferences.addons.keys():
+            if looptools in bpy.context.preferences.addons.keys():
                 other_menu.operator("mesh.looptools_circle", text='Circularize', icon='MESH_CIRCLE')
             else:
                 other_menu.operator("emc.null", text='Loop Tools addon not enabled', icon='ERROR')  
@@ -1568,9 +1571,13 @@ class Autosmooth(bpy.types.Operator):
         objs = bpy.context.selected_objects
         
         bpy.ops.object.shade_smooth()
+        
         for e in objs:
             if e.type == 'MESH':
-                e.data.use_auto_smooth = not e.data.use_auto_smooth
+                try:
+                    e.data.use_auto_smooth = not e.data.use_auto_smooth
+                except:
+                    bpy.ops.object.shade_auto_smooth()
         return{'FINISHED'}
 
 class MarkSharp(bpy.types.Operator):
@@ -1730,7 +1737,8 @@ class Smooth(bpy.types.Operator):
             objs = bpy.context.selected_objects
             for e in objs:
                 if e.type == 'MESH':
-                    e.data.use_auto_smooth = False
+                    if int_version < 410:
+                        e.data.use_auto_smooth = False
                 bpy.ops.object.shade_smooth()
         return{'FINISHED'}     
 
@@ -2540,7 +2548,8 @@ class Reset(bpy.types.Operator):
         bpy.context.scene.tool_settings.use_snap = False
         bpy.context.scene.tool_settings.use_snap_rotate = False
         bpy.context.scene.tool_settings.use_snap_scale = False
-        bpy.context.scene.tool_settings.use_snap_grid_absolute = False
+        if int_version < 420:
+            bpy.context.scene.tool_settings.use_snap_grid_absolute = False
         if self.selection:
             bpy.ops.wm.tool_set_by_id(name="builtin.select_box")
         else:
@@ -2923,7 +2932,10 @@ class addCylinder(bpy.types.Operator):
         bpy.context.object.modifiers["Vertices"].use_smooth_shade = self.smooth
 
         bpy.ops.emc.autosmooth()
-        bpy.context.object.data.auto_smooth_angle = 1.309
+        try:
+            bpy.context.object.data.auto_smooth_angle = 1.309
+        except:
+            bpy.context.object.modifiers["Smooth by Angle"]["Input_1"] = 1.309
 
         if self.top:
             bpy.ops.object.modifier_add(type='DECIMATE')
@@ -3136,7 +3148,10 @@ class addPlane(bpy.types.Operator):
         create_driver('Y Loc Correction', 'strength', '-var', 'modifiers["Y Scale | Subdivision"].screw_offset')
 
         bpy.ops.emc.autosmooth()
-        bpy.context.object.data.auto_smooth_angle = 1.0472
+        try:
+            bpy.context.object.data.auto_smooth_angle = 1.0472
+        except:
+            bpy.context.object.modifiers["Smooth by Angle"]["Input_1"] = 1.0472
 
         for i in bpy.context.active_object.modifiers:
             i.show_expanded = False
@@ -3297,7 +3312,10 @@ class addCube(bpy.types.Operator):
             create_driver('Spherize', 'factor', 'var', '["Spherize"]')
 
         bpy.ops.emc.autosmooth()
-        bpy.context.object.data.auto_smooth_angle = 1.0472
+        try:
+            bpy.context.object.data.auto_smooth_angle = 1.0472
+        except:
+            bpy.context.object.modifiers["Smooth by Angle"]["Input_1"] = 1.0472
 
         for i in bpy.context.active_object.modifiers:
             i.show_expanded = False
@@ -3603,7 +3621,10 @@ class addCone(bpy.types.Operator):
         create_driver('Vertices', 'use_smooth_shade', 'var', '["Smooth Shading"]')
 
         bpy.ops.emc.autosmooth()
-        bpy.context.object.data.auto_smooth_angle = 1.309
+        try:
+            bpy.context.object.data.auto_smooth_angle = 1.309
+        except:
+            bpy.context.object.modifiers["Smooth by Angle"]["Input_1"] = 1.309
 
         if self.top:
             bpy.ops.object.modifier_add(type='DECIMATE')
@@ -6207,6 +6228,15 @@ class Smoothing(Menu):
 
         pie = layout.menu_pie()
 
+        autosmooth = False
+        if int_version < 400:
+            autosmooth = bpy.context.object.data.use_auto_smooth
+        else:
+            for mod in bpy.context.active_object.modifiers:
+                if mod.type == 'NODES':
+                    if "Smooth by Angle" in mod.node_group.name:
+                        autosmooth = True
+
         if bpy.context.object.mode == 'EDIT':
             pie = pie.row()
             pie.label(text='')
@@ -6233,7 +6263,7 @@ class Smoothing(Menu):
 
         else:
             pie.operator("emc.smoothangle", text="Set Autosmooth Angle", icon = "SNAP_PERPENDICULAR")
-            pie.operator("emc.autosmooth", depress=bpy.context.object.data.use_auto_smooth, icon = "ALIASED")
+            pie.operator("emc.autosmooth", depress=autosmooth, icon = "ALIASED")
             pie.operator("emc.customnormals", text="Clear Custom Split Normals", icon = "REMOVE").whattodo = 'clear'
             pie.operator("emc.customnormals", text="Add Custom Split Normals", icon = "ADD").whattodo = 'add'
 
@@ -6700,19 +6730,24 @@ def register():
     for cls in classes:
         register_class(cls)
 
-    if 'mesh_looptools' in bpy.context.preferences.addons.keys():
+    looptools = 'mesh_looptools' if int_version < 420 else "bl_ext.blender_org.looptools"
+    if looptools in bpy.context.preferences.addons.keys():
         bpy.context.preferences.addons[__name__].preferences.looptools = True
 
-    if 'add_mesh_extra_objects' in bpy.context.preferences.addons.keys():
+    extra_objects = 'add_mesh_extra_objects' if int_version < 420 else "bl_ext.blender_org.extra_mesh_objects"
+    if extra_objects in bpy.context.preferences.addons.keys():
         bpy.context.preferences.addons[__name__].preferences.extraObjects = True
 
-    if 'mesh_f2' in bpy.context.preferences.addons.keys():
+    f2 = 'mesh_f2' if int_version < 420 else "bl_ext.blender_org.f2"
+    if f2 in bpy.context.preferences.addons.keys():
         bpy.context.preferences.addons[__name__].preferences.f2 = True
 
-    if 'mesh_tools' in bpy.context.preferences.addons.keys():
-        bpy.context.preferences.addons[__name__].preferences.editmesh = True
+    # mesh_tools = 'mesh_tools' if int_version < 420 else "bl_ext.blender_org.edit_mesh_tools"
+    # if mesh_tools in bpy.context.preferences.addons.keys():
+    #     bpy.context.preferences.addons[__name__].preferences.editmesh = True
     
-    if 'materials_utils' in bpy.context.preferences.addons.keys():
+    materials_utils = 'materials_utils' if int_version < 420 else "bl_ext.blender_org.material_utilities"
+    if materials_utils in bpy.context.preferences.addons.keys():
         bpy.context.preferences.addons[__name__].preferences.material = True
 
     if 'PolyQuilt' in bpy.context.preferences.addons.keys():
