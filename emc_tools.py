@@ -19,7 +19,7 @@
 bl_info = {
     "name": "EMC Tools",
     "author": "Ehab Charek",
-    "version": (1, 3, 0),
+    "version": (1, 4, 0),
     "blender": (2, 83, 3),
     "location": "View3D",
     "category": "Pie Menu",
@@ -45,6 +45,17 @@ def get_active_vert(bm):
         if isinstance(elem, bmesh.types.BMVert):
             return elem
     return None
+
+def bottom_mod(index=False):
+    name = ""
+    indx = 0
+    iterate = 0
+    for mod in bpy.context.active_object.modifiers:
+        if not mod.use_pin_to_last:
+            indx = iterate
+            name = mod.name
+        iterate += 1
+    return indx if index else name
 
 def move_to_col(ob_name, col_name, scene, check):
     does_it_exist = True if bpy.data.collections.get(col_name) else False
@@ -209,10 +220,10 @@ def face_group_select(attribute, select=True, vert=False):
     # create tool
     if not bpy.data.node_groups.get("select face group"):
         bpy.ops.node.new_geometry_nodes_modifier()
-        group = bpy.context.active_object.modifiers[-1].node_group
+        group = bpy.context.active_object.modifiers[bottom_mod()].node_group
         group.name = "select face group"
         group.is_tool = True
-        bpy.context.active_object.modifiers.remove(bpy.context.active_object.modifiers[-1])
+        bpy.context.active_object.modifiers.remove(bpy.context.active_object.modifiers[bottom_mod()])
         nAttribute = group.nodes.new('GeometryNodeInputNamedAttribute')
         comp = group.nodes.new("FunctionNodeCompare")
         set_sel = group.nodes.new("GeometryNodeToolSetSelection")
@@ -257,6 +268,2231 @@ def face_group_remove(attribute):
         bpy.ops.object.face_map_remove()
     else:
         bpy.context.active_object.data.attributes.remove(bpy.context.active_object.data.attributes[attribute])
+
+def gn_cube():
+    group = bpy.data.node_groups.new("EMC Cube", "GeometryNodeTree")
+    group.is_modifier = True
+    group.color_tag = "GEOMETRY"
+
+    # CREATING NODE: Group Input
+    node_0 = group.nodes.new("NodeGroupInput")
+    node_0.name = "Group Input"
+    node_0.location[0] = -420.0
+    node_0.location[1] = -340.0
+    # SETTING VALUES OF NODE: Group Input
+
+    # CREATING NODE: Group Output
+    node_1 = group.nodes.new("NodeGroupOutput")
+    node_1.name = "Group Output"
+    node_1.location[0] = 700.0
+    node_1.location[1] = -180.0
+    # SETTING VALUES OF NODE: Group Output
+
+    # CREATING NODE: Subdivide Mesh
+    node_2 = group.nodes.new("GeometryNodeSubdivideMesh")
+    node_2.name = "Subdivide Mesh"
+    node_2.location[0] = -40.0
+    node_2.location[1] = -400.0
+    node_2.hide = True
+    # SETTING VALUES OF NODE: Subdivide Mesh
+
+    # CREATING NODE: Subdivision Surface
+    node_3 = group.nodes.new("GeometryNodeSubdivisionSurface")
+    node_3.name = "Subdivision Surface"
+    node_3.location[0] = -40.0
+    node_3.location[1] = -200.0
+    # SETTING VALUES OF NODE: Subdivision Surface
+    node_3.inputs[2].default_value = 0.0
+    node_3.inputs[3].default_value = 0.0
+
+    # CREATING NODE: Set Position
+    node_4 = group.nodes.new("GeometryNodeSetPosition")
+    node_4.name = "Set Position"
+    node_4.location[0] = 160.0
+    node_4.location[1] = -160.0
+    # SETTING VALUES OF NODE: Set Position
+    node_4.inputs[1].default_value = True
+    node_4.inputs[3].default_value[0] = 0.0
+    node_4.inputs[3].default_value[1] = 0.0
+    node_4.inputs[3].default_value[2] = 0.0
+
+    # CREATING NODE: Normal
+    node_5 = group.nodes.new("GeometryNodeInputNormal")
+    node_5.name = "Normal"
+    node_5.location[0] = -240.0
+    node_5.location[1] = -680.0
+    node_5.hide = True
+    # SETTING VALUES OF NODE: Normal
+
+    # CREATING NODE: Vector Math
+    node_6 = group.nodes.new("ShaderNodeVectorMath")
+    node_6.name = "Vector Math"
+    node_6.location[0] = -240.0
+    node_6.location[1] = -640.0
+    node_6.hide = True
+    # SETTING VALUES OF NODE: Vector Math
+    setattr(node_6, "operation", "NORMALIZE")
+    node_6.inputs[1].default_value[0] = 0.0
+    node_6.inputs[1].default_value[1] = 0.0
+    node_6.inputs[1].default_value[2] = 0.0
+    node_6.inputs[2].default_value[0] = 0.0
+    node_6.inputs[2].default_value[1] = 0.0
+    node_6.inputs[2].default_value[2] = 0.0
+    node_6.inputs[3].default_value = 1.0
+
+    # CREATING NODE: Position
+    node_7 = group.nodes.new("GeometryNodeInputPosition")
+    node_7.name = "Position"
+    node_7.location[0] = -240.0
+    node_7.location[1] = -560.0
+    node_7.hide = True
+    # SETTING VALUES OF NODE: Position
+
+    # CREATING NODE: Mix
+    node_8 = group.nodes.new("ShaderNodeMix")
+    node_8.name = "Mix"
+    node_8.location[0] = -40.0
+    node_8.location[1] = -460.0
+    # SETTING VALUES OF NODE: Mix
+    setattr(node_8, "data_type", "VECTOR")
+    setattr(node_8, "blend_type", "MIX")
+    setattr(node_8, "clamp_factor", True)
+    setattr(node_8, "clamp_result", False)
+    node_8.inputs[1].default_value[0] = 0.5
+    node_8.inputs[1].default_value[1] = 0.5
+    node_8.inputs[1].default_value[2] = 0.5
+    node_8.inputs[2].default_value = 0.0
+    node_8.inputs[3].default_value = 0.0
+    node_8.inputs[6].default_value[0] = 0.5
+    node_8.inputs[6].default_value[1] = 0.5
+    node_8.inputs[6].default_value[2] = 0.5
+    node_8.inputs[7].default_value[0] = 0.5
+    node_8.inputs[7].default_value[1] = 0.5
+    node_8.inputs[7].default_value[2] = 0.5
+    node_8.inputs[8].default_value[0] = 0.0
+    node_8.inputs[8].default_value[1] = 0.0
+    node_8.inputs[8].default_value[2] = 0.0
+    node_8.inputs[9].default_value[0] = 0.0
+    node_8.inputs[9].default_value[1] = 0.0
+    node_8.inputs[9].default_value[2] = 0.0
+
+    # CREATING NODE: Switch
+    node_9 = group.nodes.new("GeometryNodeSwitch")
+    node_9.name = "Switch"
+    node_9.location[0] = 340.0
+    node_9.location[1] = -240.0
+    node_9.hide = True
+    # SETTING VALUES OF NODE: Switch
+
+    # CREATING NODE: Compare
+    node_10 = group.nodes.new("FunctionNodeCompare")
+    node_10.name = "Compare"
+    node_10.location[0] = 340.0
+    node_10.location[1] = -80.0
+    # SETTING VALUES OF NODE: Compare
+    setattr(node_10, "operation", "GREATER_THAN")
+    setattr(node_10, "data_type", "INT")
+    setattr(node_10, "mode", "ELEMENT")
+    node_10.inputs[0].default_value = 0.0
+    node_10.inputs[1].default_value = 0.0
+    node_10.inputs[3].default_value = 0
+    node_10.inputs[4].default_value[0] = 0.0
+    node_10.inputs[4].default_value[1] = 0.0
+    node_10.inputs[4].default_value[2] = 0.0
+    node_10.inputs[5].default_value[0] = 0.0
+    node_10.inputs[5].default_value[1] = 0.0
+    node_10.inputs[5].default_value[2] = 0.0
+    node_10.inputs[6].default_value[0] = 0.800000011920929
+    node_10.inputs[6].default_value[1] = 0.800000011920929
+    node_10.inputs[6].default_value[2] = 0.800000011920929
+    node_10.inputs[7].default_value[0] = 0.800000011920929
+    node_10.inputs[7].default_value[1] = 0.800000011920929
+    node_10.inputs[7].default_value[2] = 0.800000011920929
+    node_10.inputs[8].default_value = ""
+    node_10.inputs[9].default_value = ""
+    node_10.inputs[10].default_value = 0.8999999761581421
+    node_10.inputs[11].default_value = 0.08726649731397629
+    node_10.inputs[12].default_value = 0.0010000000474974513
+
+    # CREATING NODE: Set Position.001
+    node_11 = group.nodes.new("GeometryNodeSetPosition")
+    node_11.name = "Set Position.001"
+    node_11.location[0] = 520.0
+    node_11.location[1] = -180.0
+    # SETTING VALUES OF NODE: Set Position.001
+    node_11.inputs[1].default_value = True
+
+    # CREATING NODE: Sample Index
+    node_12 = group.nodes.new("GeometryNodeSampleIndex")
+    node_12.name = "Sample Index"
+    node_12.location[0] = 160.0
+    node_12.location[1] = -280.0
+    # SETTING VALUES OF NODE: Sample Index
+    setattr(node_12, "data_type", "FLOAT_VECTOR")
+    setattr(node_12, "domain", "POINT")
+
+    # CREATING NODE: Index
+    node_13 = group.nodes.new("GeometryNodeInputIndex")
+    node_13.name = "Index"
+    node_13.location[0] = 160.0
+    node_13.location[1] = -480.0
+    node_13.hide = True
+    # SETTING VALUES OF NODE: Index
+
+    # CREATING NODE: Mix.001
+    node_14 = group.nodes.new("ShaderNodeMix")
+    node_14.name = "Mix.001"
+    node_14.location[0] = 340.0
+    node_14.location[1] = -280.0
+    # SETTING VALUES OF NODE: Mix.001
+    setattr(node_14, "data_type", "VECTOR")
+    setattr(node_14, "blend_type", "MIX")
+    setattr(node_14, "clamp_factor", True)
+    setattr(node_14, "clamp_result", False)
+    node_14.inputs[1].default_value[0] = 0.5
+    node_14.inputs[1].default_value[1] = 0.5
+    node_14.inputs[1].default_value[2] = 0.5
+    node_14.inputs[2].default_value = 0.0
+    node_14.inputs[3].default_value = 0.0
+    node_14.inputs[6].default_value[0] = 0.5
+    node_14.inputs[6].default_value[1] = 0.5
+    node_14.inputs[6].default_value[2] = 0.5
+    node_14.inputs[7].default_value[0] = 0.5
+    node_14.inputs[7].default_value[1] = 0.5
+    node_14.inputs[7].default_value[2] = 0.5
+    node_14.inputs[8].default_value[0] = 0.0
+    node_14.inputs[8].default_value[1] = 0.0
+    node_14.inputs[8].default_value[2] = 0.0
+    node_14.inputs[9].default_value[0] = 0.0
+    node_14.inputs[9].default_value[1] = 0.0
+    node_14.inputs[9].default_value[2] = 0.0
+
+    # CREATING NODE: Cube
+    node_15 = group.nodes.new("GeometryNodeMeshCube")
+    node_15.name = "Cube"
+    node_15.location[0] = -240.0
+    node_15.location[1] = -340.0
+    # SETTING VALUES OF NODE: Cube
+    node_15.inputs[1].default_value = 2
+    node_15.inputs[2].default_value = 2
+    node_15.inputs[3].default_value = 2
+
+    # CREATING NODE: Bounding Box
+    node_16 = group.nodes.new("GeometryNodeBoundBox")
+    node_16.name = "Bounding Box"
+    node_16.location[0] = -40.0
+    node_16.location[1] = -680.0
+    # SETTING VALUES OF NODE: Bounding Box
+
+    # CREATING NODE: Vector Math.001
+    node_17 = group.nodes.new("ShaderNodeVectorMath")
+    node_17.name = "Vector Math.001"
+    node_17.location[0] = 140.0
+    node_17.location[1] = -680.0
+    # SETTING VALUES OF NODE: Vector Math.001
+    setattr(node_17, "operation", "MULTIPLY")
+    node_17.inputs[1].default_value[0] = 0.0
+    node_17.inputs[1].default_value[1] = 0.0
+    node_17.inputs[1].default_value[2] = -1.0
+    node_17.inputs[2].default_value[0] = 0.0
+    node_17.inputs[2].default_value[1] = 0.0
+    node_17.inputs[2].default_value[2] = 0.0
+    node_17.inputs[3].default_value = 1.0
+
+    # CREATING NODE: Vector Math.002
+    node_18 = group.nodes.new("ShaderNodeVectorMath")
+    node_18.name = "Vector Math.002"
+    node_18.location[0] = 320.0
+    node_18.location[1] = -680.0
+    # SETTING VALUES OF NODE: Vector Math.002
+    setattr(node_18, "operation", "SCALE")
+    node_18.inputs[1].default_value[0] = 0.0
+    node_18.inputs[1].default_value[1] = 0.0
+    node_18.inputs[1].default_value[2] = -1.0
+    node_18.inputs[2].default_value[0] = 0.0
+    node_18.inputs[2].default_value[1] = 0.0
+    node_18.inputs[2].default_value[2] = 0.0
+
+    # CREATING NODE: Reroute
+    node_19 = group.nodes.new("NodeReroute")
+    node_19.name = "Reroute"
+    node_19.location[0] = -80.0
+    node_19.location[1] = -340.0
+    # SETTING VALUES OF NODE: Reroute
+
+    # CREATING NODE: Store Named Attribute
+    node_20 = group.nodes.new("GeometryNodeStoreNamedAttribute")
+    node_20.name = "Store Named Attribute"
+    node_20.location[0] = -240.0
+    node_20.location[1] = -300.0
+    node_20.hide = True
+    # SETTING VALUES OF NODE: Store Named Attribute
+    setattr(node_20, "data_type", "FLOAT2")
+    setattr(node_20, "domain", "CORNER")
+    node_20.inputs[1].default_value = True
+    node_20.inputs[2].default_value = "UVMap"
+
+    # CREATING GROUP INPUTS AND OUTPUTS
+    group.interface.new_socket(name="Size",in_out="INPUT",socket_type="NodeSocketVector")
+    group.interface.new_socket(name="Level",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Simple",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Spherize",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Origin at Base",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Geometry",in_out="OUTPUT",socket_type="NodeSocketGeometry")
+    # CONNECTING, SETTING PARENTS, AND CLEANING INPUTS
+    group.links.new(group.nodes["Set Position.001"].outputs["Geometry"], node_1.inputs[0])
+    group.links.new(group.nodes["Reroute"].outputs["Output"], node_2.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Level"], node_2.inputs[1])
+    group.links.new(group.nodes["Reroute"].outputs["Output"], node_3.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Level"], node_3.inputs[1])
+    group.links.new(group.nodes["Subdivision Surface"].outputs["Mesh"], node_4.inputs[0])
+    node_4.inputs[1].hide = True
+    group.links.new(group.nodes["Mix"].outputs["Result"], node_4.inputs[2])
+    node_4.inputs[3].hide = True
+    group.links.new(group.nodes["Normal"].outputs["Normal"], node_6.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Spherize"], node_8.inputs[0])
+    group.links.new(group.nodes["Position"].outputs["Position"], node_8.inputs[4])
+    group.links.new(group.nodes["Vector Math"].outputs["Vector"], node_8.inputs[5])
+    group.links.new(group.nodes["Compare"].outputs["Result"], node_9.inputs[0])
+    group.links.new(group.nodes["Subdivision Surface"].outputs["Mesh"], node_9.inputs[1])
+    group.links.new(group.nodes["Set Position"].outputs["Geometry"], node_9.inputs[2])
+    group.links.new(group.nodes["Group Input"].outputs["Level"], node_10.inputs[2])
+    group.links.new(group.nodes["Switch"].outputs["Output"], node_11.inputs[0])
+    group.links.new(group.nodes["Mix.001"].outputs["Result"], node_11.inputs[2])
+    group.links.new(group.nodes["Vector Math.002"].outputs["Vector"], node_11.inputs[3])
+    group.links.new(group.nodes["Subdivide Mesh"].outputs["Mesh"], node_12.inputs[0])
+    group.links.new(group.nodes["Position"].outputs["Position"], node_12.inputs[1])
+    group.links.new(group.nodes["Index"].outputs["Index"], node_12.inputs[2])
+    group.links.new(group.nodes["Group Input"].outputs["Simple"], node_14.inputs[0])
+    group.links.new(group.nodes["Position"].outputs["Position"], node_14.inputs[4])
+    group.links.new(group.nodes["Sample Index"].outputs["Value"], node_14.inputs[5])
+    group.links.new(group.nodes["Group Input"].outputs["Size"], node_15.inputs[0])
+    group.links.new(group.nodes["Reroute"].outputs["Output"], node_16.inputs[0])
+    group.links.new(group.nodes["Bounding Box"].outputs["Min"], node_17.inputs[0])
+    group.links.new(group.nodes["Vector Math.001"].outputs["Vector"], node_18.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Origin at Base"], node_18.inputs[3])
+    group.links.new(group.nodes["Store Named Attribute"].outputs["Geometry"], node_19.inputs[0])
+    group.links.new(group.nodes["Cube"].outputs["Mesh"], node_20.inputs[0])
+    group.links.new(group.nodes["Cube"].outputs["UV Map"], node_20.inputs[3])
+    # SETTING GROUP INPUT DEFAULTS
+    group.interface.items_tree["Size"].subtype = "TRANSLATION"
+    group.interface.items_tree["Size"].default_value[0] = 2.0
+    group.interface.items_tree["Size"].default_value[1] = 2.0
+    group.interface.items_tree["Size"].default_value[2] = 2.0
+    group.interface.items_tree["Size"].hide_value = False
+    group.interface.items_tree["Size"].hide_in_modifier = False
+    group.interface.items_tree["Size"].force_non_field = False
+    group.interface.items_tree["Size"].min_value = 0.0
+    group.interface.items_tree["Size"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["Level"].default_value = 0
+    group.interface.items_tree["Level"].hide_value = False
+    group.interface.items_tree["Level"].hide_in_modifier = False
+    group.interface.items_tree["Level"].force_non_field = False
+    group.interface.items_tree["Level"].min_value = 0
+    group.interface.items_tree["Level"].max_value = 6
+    group.interface.items_tree["Simple"].subtype = "FACTOR"
+    group.interface.items_tree["Simple"].default_value = 1.0
+    group.interface.items_tree["Simple"].hide_value = False
+    group.interface.items_tree["Simple"].hide_in_modifier = False
+    group.interface.items_tree["Simple"].force_non_field = True
+    group.interface.items_tree["Simple"].min_value = 0.0
+    group.interface.items_tree["Simple"].max_value = 1.0
+    group.interface.items_tree["Spherize"].subtype = "FACTOR"
+    group.interface.items_tree["Spherize"].default_value = 0.0
+    group.interface.items_tree["Spherize"].hide_value = False
+    group.interface.items_tree["Spherize"].hide_in_modifier = False
+    group.interface.items_tree["Spherize"].force_non_field = True
+    group.interface.items_tree["Spherize"].min_value = 0.0
+    group.interface.items_tree["Spherize"].max_value = 1.0
+    group.interface.items_tree["Origin at Base"].subtype = "FACTOR"
+    group.interface.items_tree["Origin at Base"].default_value = 0.0
+    group.interface.items_tree["Origin at Base"].hide_value = False
+    group.interface.items_tree["Origin at Base"].hide_in_modifier = False
+    group.interface.items_tree["Origin at Base"].force_non_field = True
+    group.interface.items_tree["Origin at Base"].min_value = 0.0
+    group.interface.items_tree["Origin at Base"].max_value = 1.0
+
+def gn_cylinder():
+    group = bpy.data.node_groups.new("EMC Cylinder", "GeometryNodeTree")
+    group.is_modifier = True
+    group.color_tag = "GEOMETRY"
+
+    # CREATING NODE: Group Input
+    node_0 = group.nodes.new("NodeGroupInput")
+    node_0.name = "Group Input"
+    node_0.location[0] = -260.0
+    node_0.location[1] = 40.0
+    # SETTING VALUES OF NODE: Group Input
+
+    # CREATING NODE: Group Output
+    node_1 = group.nodes.new("NodeGroupOutput")
+    node_1.name = "Group Output"
+    node_1.location[0] = 860.0
+    node_1.location[1] = 220.0
+    # SETTING VALUES OF NODE: Group Output
+
+    # CREATING NODE: Menu Switch
+    node_2 = group.nodes.new("GeometryNodeMenuSwitch")
+    node_2.name = "Menu Switch"
+    node_2.location[0] = 500.0
+    node_2.location[1] = 220.0
+    # SETTING VALUES OF NODE: Menu Switch
+    setattr(node_2, "data_type", "GEOMETRY")
+    node_2.enum_items.remove(node_2.enum_items[0])
+    node_2.enum_items.remove(node_2.enum_items[0])
+    node_2.enum_items.new("N-Gon")
+    node_2.enum_items.new("Triangle")
+
+    # CREATING NODE: Cylinder
+    node_3 = group.nodes.new("GeometryNodeMeshCylinder")
+    node_3.name = "Cylinder"
+    node_3.location[0] = -60.0
+    node_3.location[1] = 320.0
+    # SETTING VALUES OF NODE: Cylinder
+    setattr(node_3, "fill_type", "NGON")
+
+    # CREATING NODE: Cylinder.001
+    node_4 = group.nodes.new("GeometryNodeMeshCylinder")
+    node_4.name = "Cylinder.001"
+    node_4.location[0] = -60.0
+    node_4.location[1] = 20.0
+    # SETTING VALUES OF NODE: Cylinder.001
+    setattr(node_4, "fill_type", "TRIANGLE_FAN")
+
+    # CREATING NODE: Store Named Attribute
+    node_5 = group.nodes.new("GeometryNodeStoreNamedAttribute")
+    node_5.name = "Store Named Attribute"
+    node_5.location[0] = 140.0
+    node_5.location[1] = 320.0
+    # SETTING VALUES OF NODE: Store Named Attribute
+    setattr(node_5, "data_type", "FLOAT")
+    setattr(node_5, "domain", "EDGE")
+    node_5.inputs[2].default_value = "crease_edge"
+    node_5.inputs[3].default_value = True
+
+    # CREATING NODE: Boolean Math
+    node_6 = group.nodes.new("FunctionNodeBooleanMath")
+    node_6.name = "Boolean Math"
+    node_6.location[0] = 140.0
+    node_6.location[1] = 120.0
+    node_6.hide = True
+    # SETTING VALUES OF NODE: Boolean Math
+    setattr(node_6, "operation", "OR")
+
+    # CREATING NODE: Store Named Attribute.001
+    node_7 = group.nodes.new("GeometryNodeStoreNamedAttribute")
+    node_7.name = "Store Named Attribute.001"
+    node_7.location[0] = 140.0
+    node_7.location[1] = 20.0
+    # SETTING VALUES OF NODE: Store Named Attribute.001
+    setattr(node_7, "data_type", "FLOAT")
+    setattr(node_7, "domain", "EDGE")
+    node_7.inputs[2].default_value = "crease_edge"
+    node_7.inputs[3].default_value = True
+
+    # CREATING NODE: Boolean Math.001
+    node_8 = group.nodes.new("FunctionNodeBooleanMath")
+    node_8.name = "Boolean Math.001"
+    node_8.location[0] = 140.0
+    node_8.location[1] = -180.0
+    node_8.hide = True
+    # SETTING VALUES OF NODE: Boolean Math.001
+    setattr(node_8, "operation", "OR")
+
+    # CREATING NODE: Store Named Attribute.002
+    node_9 = group.nodes.new("GeometryNodeStoreNamedAttribute")
+    node_9.name = "Store Named Attribute.002"
+    node_9.location[0] = 320.0
+    node_9.location[1] = 320.0
+    # SETTING VALUES OF NODE: Store Named Attribute.002
+    setattr(node_9, "data_type", "FLOAT2")
+    setattr(node_9, "domain", "CORNER")
+    node_9.inputs[1].default_value = True
+    node_9.inputs[2].default_value = "UVMap"
+
+    # CREATING NODE: Store Named Attribute.003
+    node_10 = group.nodes.new("GeometryNodeStoreNamedAttribute")
+    node_10.name = "Store Named Attribute.003"
+    node_10.location[0] = 320.0
+    node_10.location[1] = 20.0
+    # SETTING VALUES OF NODE: Store Named Attribute.003
+    setattr(node_10, "data_type", "FLOAT2")
+    setattr(node_10, "domain", "CORNER")
+    node_10.inputs[1].default_value = True
+    node_10.inputs[2].default_value = "UVMap"
+
+    # CREATING NODE: Set Position
+    node_11 = group.nodes.new("GeometryNodeSetPosition")
+    node_11.name = "Set Position"
+    node_11.location[0] = 680.4443969726562
+    node_11.location[1] = 220.0
+    # SETTING VALUES OF NODE: Set Position
+    node_11.inputs[1].default_value = True
+    node_11.inputs[2].default_value[0] = 0.0
+    node_11.inputs[2].default_value[1] = 0.0
+    node_11.inputs[2].default_value[2] = 0.0
+
+    # CREATING NODE: Bounding Box
+    node_12 = group.nodes.new("GeometryNodeBoundBox")
+    node_12.name = "Bounding Box"
+    node_12.location[0] = 500.0
+    node_12.location[1] = 40.0
+    # SETTING VALUES OF NODE: Bounding Box
+    try:
+        node_12.outputs["Bounding Box"].hide = True
+    except:
+        pass
+    try:
+        node_12.outputs["Max"].hide = True
+    except:
+        pass
+
+    # CREATING NODE: Vector Math
+    node_13 = group.nodes.new("ShaderNodeVectorMath")
+    node_13.name = "Vector Math"
+    node_13.location[0] = 500.0
+    node_13.location[1] = -40.0
+    # SETTING VALUES OF NODE: Vector Math
+    setattr(node_13, "operation", "MULTIPLY")
+    node_13.inputs[1].default_value[0] = 0.0
+    node_13.inputs[1].default_value[1] = 0.0
+    node_13.inputs[1].default_value[2] = -1.0
+    node_13.inputs[2].default_value[0] = 0.0
+    node_13.inputs[2].default_value[1] = 0.0
+    node_13.inputs[2].default_value[2] = 0.0
+    node_13.inputs[3].default_value = 1.0
+
+    # CREATING NODE: Vector Math.001
+    node_14 = group.nodes.new("ShaderNodeVectorMath")
+    node_14.name = "Vector Math.001"
+    node_14.location[0] = 500.0
+    node_14.location[1] = -240.0
+    node_14.hide = True
+    # SETTING VALUES OF NODE: Vector Math.001
+    setattr(node_14, "operation", "SCALE")
+    node_14.inputs[1].default_value[0] = 0.0
+    node_14.inputs[1].default_value[1] = 0.0
+    node_14.inputs[1].default_value[2] = -1.0
+    node_14.inputs[2].default_value[0] = 0.0
+    node_14.inputs[2].default_value[1] = 0.0
+    node_14.inputs[2].default_value[2] = 0.0
+
+    # CREATING GROUP INPUTS AND OUTPUTS
+    group.interface.new_socket(name="Fill Type",in_out="INPUT",socket_type="NodeSocketMenu")
+    group.interface.new_socket(name="Vertices",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Side Segments",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Fill Segments",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Radius",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Depth",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Origin at Base",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Geometry",in_out="OUTPUT",socket_type="NodeSocketGeometry")
+    # CONNECTING, SETTING PARENTS, AND CLEANING INPUTS
+    group.links.new(group.nodes["Set Position"].outputs["Geometry"], node_1.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Fill Type"], node_2.inputs[0])
+    group.links.new(group.nodes["Store Named Attribute.002"].outputs["Geometry"], node_2.inputs[1])
+    group.links.new(group.nodes["Store Named Attribute.003"].outputs["Geometry"], node_2.inputs[2])
+    group.links.new(group.nodes["Group Input"].outputs["Vertices"], node_3.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Side Segments"], node_3.inputs[1])
+    group.links.new(group.nodes["Group Input"].outputs["Fill Segments"], node_3.inputs[2])
+    group.links.new(group.nodes["Group Input"].outputs["Radius"], node_3.inputs[3])
+    group.links.new(group.nodes["Group Input"].outputs["Depth"], node_3.inputs[4])
+    group.links.new(group.nodes["Group Input"].outputs["Vertices"], node_4.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Side Segments"], node_4.inputs[1])
+    group.links.new(group.nodes["Group Input"].outputs["Fill Segments"], node_4.inputs[2])
+    group.links.new(group.nodes["Group Input"].outputs["Radius"], node_4.inputs[3])
+    group.links.new(group.nodes["Group Input"].outputs["Depth"], node_4.inputs[4])
+    group.links.new(group.nodes["Cylinder"].outputs["Mesh"], node_5.inputs[0])
+    group.links.new(group.nodes["Boolean Math"].outputs["Boolean"], node_5.inputs[1])
+    group.links.new(group.nodes["Cylinder"].outputs["Top"], node_6.inputs[0])
+    group.links.new(group.nodes["Cylinder"].outputs["Bottom"], node_6.inputs[1])
+    group.links.new(group.nodes["Cylinder.001"].outputs["Mesh"], node_7.inputs[0])
+    group.links.new(group.nodes["Boolean Math.001"].outputs["Boolean"], node_7.inputs[1])
+    group.links.new(group.nodes["Cylinder.001"].outputs["Top"], node_8.inputs[0])
+    group.links.new(group.nodes["Cylinder.001"].outputs["Bottom"], node_8.inputs[1])
+    group.links.new(group.nodes["Store Named Attribute"].outputs["Geometry"], node_9.inputs[0])
+    group.links.new(group.nodes["Cylinder"].outputs["UV Map"], node_9.inputs[3])
+    group.links.new(group.nodes["Store Named Attribute.001"].outputs["Geometry"], node_10.inputs[0])
+    group.links.new(group.nodes["Cylinder.001"].outputs["UV Map"], node_10.inputs[3])
+    group.links.new(group.nodes["Menu Switch"].outputs["Output"], node_11.inputs[0])
+    group.links.new(group.nodes["Vector Math.001"].outputs["Vector"], node_11.inputs[3])
+    group.links.new(group.nodes["Menu Switch"].outputs["Output"], node_12.inputs[0])
+    group.links.new(group.nodes["Bounding Box"].outputs["Min"], node_13.inputs[0])
+    group.links.new(group.nodes["Vector Math"].outputs["Vector"], node_14.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Origin at Base"], node_14.inputs[3])
+    # SETTING GROUP INPUT DEFAULTS
+    group.interface.items_tree["Fill Type"].default_value = "N-Gon"
+    group.interface.items_tree["Fill Type"].hide_value = False
+    group.interface.items_tree["Fill Type"].hide_in_modifier = False
+    group.interface.items_tree["Fill Type"].force_non_field = False
+    group.interface.items_tree["Vertices"].default_value = 32
+    group.interface.items_tree["Vertices"].hide_value = False
+    group.interface.items_tree["Vertices"].hide_in_modifier = False
+    group.interface.items_tree["Vertices"].force_non_field = False
+    group.interface.items_tree["Vertices"].min_value = 3
+    group.interface.items_tree["Vertices"].max_value = 512
+    group.interface.items_tree["Side Segments"].default_value = 1
+    group.interface.items_tree["Side Segments"].hide_value = False
+    group.interface.items_tree["Side Segments"].hide_in_modifier = False
+    group.interface.items_tree["Side Segments"].force_non_field = False
+    group.interface.items_tree["Side Segments"].min_value = 1
+    group.interface.items_tree["Side Segments"].max_value = 512
+    group.interface.items_tree["Fill Segments"].default_value = 1
+    group.interface.items_tree["Fill Segments"].hide_value = False
+    group.interface.items_tree["Fill Segments"].hide_in_modifier = False
+    group.interface.items_tree["Fill Segments"].force_non_field = False
+    group.interface.items_tree["Fill Segments"].min_value = 1
+    group.interface.items_tree["Fill Segments"].max_value = 512
+    group.interface.items_tree["Radius"].subtype = "DISTANCE"
+    group.interface.items_tree["Radius"].default_value = 1.0
+    group.interface.items_tree["Radius"].hide_value = False
+    group.interface.items_tree["Radius"].hide_in_modifier = False
+    group.interface.items_tree["Radius"].force_non_field = False
+    group.interface.items_tree["Radius"].min_value = 0.0
+    group.interface.items_tree["Radius"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["Depth"].subtype = "DISTANCE"
+    group.interface.items_tree["Depth"].default_value = 2.0
+    group.interface.items_tree["Depth"].hide_value = False
+    group.interface.items_tree["Depth"].hide_in_modifier = False
+    group.interface.items_tree["Depth"].force_non_field = False
+    group.interface.items_tree["Depth"].min_value = 0.0
+    group.interface.items_tree["Depth"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["Origin at Base"].subtype = "FACTOR"
+    group.interface.items_tree["Origin at Base"].default_value = 0.0
+    group.interface.items_tree["Origin at Base"].hide_value = False
+    group.interface.items_tree["Origin at Base"].hide_in_modifier = False
+    group.interface.items_tree["Origin at Base"].force_non_field = True
+    group.interface.items_tree["Origin at Base"].min_value = 0.0
+    group.interface.items_tree["Origin at Base"].max_value = 1.0
+
+def gn_circle():
+    group = bpy.data.node_groups.new("EMC Circle", "GeometryNodeTree")
+    group.is_modifier = True
+    group.color_tag = "GEOMETRY"
+
+    # CREATING NODE: Group Input
+    node_0 = group.nodes.new("NodeGroupInput")
+    node_0.name = "Group Input"
+    node_0.location[0] = -160.0
+    node_0.location[1] = -340.0
+    # SETTING VALUES OF NODE: Group Input
+
+    # CREATING NODE: Group Output
+    node_1 = group.nodes.new("NodeGroupOutput")
+    node_1.name = "Group Output"
+    node_1.location[0] = 1460.0
+    node_1.location[1] = -160.0
+    # SETTING VALUES OF NODE: Group Output
+
+    # CREATING NODE: Curve Circle
+    node_2 = group.nodes.new("GeometryNodeCurvePrimitiveCircle")
+    node_2.name = "Curve Circle"
+    node_2.location[0] = 20.0
+    node_2.location[1] = -340.0
+    # SETTING VALUES OF NODE: Curve Circle
+    setattr(node_2, "mode", "RADIUS")
+    node_2.inputs[1].default_value[0] = -1.0
+    node_2.inputs[1].default_value[1] = 0.0
+    node_2.inputs[1].default_value[2] = 0.0
+    node_2.inputs[2].default_value[0] = 0.0
+    node_2.inputs[2].default_value[1] = 1.0
+    node_2.inputs[2].default_value[2] = 0.0
+    node_2.inputs[3].default_value[0] = 1.0
+    node_2.inputs[3].default_value[1] = 0.0
+    node_2.inputs[3].default_value[2] = 0.0
+
+    # CREATING NODE: Fill Curve.001
+    node_3 = group.nodes.new("GeometryNodeFillCurve")
+    node_3.name = "Fill Curve.001"
+    node_3.location[0] = 740.0
+    node_3.location[1] = -320.0
+    # SETTING VALUES OF NODE: Fill Curve.001
+    setattr(node_3, "mode", "NGONS")
+    node_3.inputs[1].default_value = 0
+
+    # CREATING NODE: Extrude Mesh
+    node_4 = group.nodes.new("GeometryNodeExtrudeMesh")
+    node_4.name = "Extrude Mesh"
+    node_4.location[0] = 380.0
+    node_4.location[1] = -160.0
+    # SETTING VALUES OF NODE: Extrude Mesh
+    setattr(node_4, "mode", "EDGES")
+    node_4.inputs[1].default_value = True
+    node_4.inputs[2].default_value[0] = 0.0
+    node_4.inputs[2].default_value[1] = 0.0
+    node_4.inputs[2].default_value[2] = 0.0
+    node_4.inputs[3].default_value = 0.0
+    node_4.inputs[4].default_value = True
+
+    # CREATING NODE: Curve to Mesh
+    node_5 = group.nodes.new("GeometryNodeCurveToMesh")
+    node_5.name = "Curve to Mesh"
+    node_5.location[0] = 200.0
+    node_5.location[1] = -160.0
+    # SETTING VALUES OF NODE: Curve to Mesh
+    node_5.inputs[2].default_value = False
+
+    # CREATING NODE: Merge by Distance
+    node_6 = group.nodes.new("GeometryNodeMergeByDistance")
+    node_6.name = "Merge by Distance"
+    node_6.location[0] = 560.0
+    node_6.location[1] = -160.0
+    # SETTING VALUES OF NODE: Merge by Distance
+    setattr(node_6, "mode", "ALL")
+    node_6.inputs[2].default_value = 100.0
+
+    # CREATING NODE: Flip Faces
+    node_7 = group.nodes.new("GeometryNodeFlipFaces")
+    node_7.name = "Flip Faces"
+    node_7.location[0] = 1280.0
+    node_7.location[1] = -160.0
+    # SETTING VALUES OF NODE: Flip Faces
+
+    # CREATING NODE: Switch.001
+    node_8 = group.nodes.new("GeometryNodeSwitch")
+    node_8.name = "Switch.001"
+    node_8.location[0] = 1100.0
+    node_8.location[1] = -160.0
+    # SETTING VALUES OF NODE: Switch.001
+
+    # CREATING NODE: Menu Switch
+    node_9 = group.nodes.new("GeometryNodeMenuSwitch")
+    node_9.name = "Menu Switch"
+    node_9.location[0] = 920.0
+    node_9.location[1] = -160.0
+    # SETTING VALUES OF NODE: Menu Switch
+    setattr(node_9, "data_type", "GEOMETRY")
+    node_9.enum_items.remove(node_9.enum_items[0])
+    node_9.enum_items.remove(node_9.enum_items[0])
+    node_9.enum_items.new("Triangles")
+    node_9.enum_items.new("N-Gon")
+
+    # CREATING NODE: Flip Faces.001
+    node_10 = group.nodes.new("GeometryNodeFlipFaces")
+    node_10.name = "Flip Faces.001"
+    node_10.location[0] = 740.0
+    node_10.location[1] = -160.0
+    # SETTING VALUES OF NODE: Flip Faces.001
+    node_10.inputs[1].default_value = True
+
+    # CREATING GROUP INPUTS AND OUTPUTS
+    group.interface.new_socket(name="Resolution",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Radius",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Fill",in_out="INPUT",socket_type="NodeSocketBool")
+    group.interface.new_socket(name="Fill Type",in_out="INPUT",socket_type="NodeSocketMenu")
+    group.interface.new_socket(name="Flip Faces",in_out="INPUT",socket_type="NodeSocketBool")
+    group.interface.new_socket(name="Geometry",in_out="OUTPUT",socket_type="NodeSocketGeometry")
+    # CONNECTING, SETTING PARENTS, AND CLEANING INPUTS
+    group.links.new(group.nodes["Flip Faces"].outputs["Mesh"], node_1.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Resolution"], node_2.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Radius"], node_2.inputs[4])
+    group.links.new(group.nodes["Curve Circle"].outputs["Curve"], node_3.inputs[0])
+    group.links.new(group.nodes["Curve to Mesh"].outputs["Mesh"], node_4.inputs[0])
+    group.links.new(group.nodes["Curve Circle"].outputs["Curve"], node_5.inputs[0])
+    group.links.new(group.nodes["Extrude Mesh"].outputs["Mesh"], node_6.inputs[0])
+    group.links.new(group.nodes["Extrude Mesh"].outputs["Top"], node_6.inputs[1])
+    group.links.new(group.nodes["Switch.001"].outputs["Output"], node_7.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Flip Faces"], node_7.inputs[1])
+    group.links.new(group.nodes["Group Input"].outputs["Fill"], node_8.inputs[0])
+    group.links.new(group.nodes["Curve to Mesh"].outputs["Mesh"], node_8.inputs[1])
+    group.links.new(group.nodes["Menu Switch"].outputs["Output"], node_8.inputs[2])
+    group.links.new(group.nodes["Group Input"].outputs["Fill Type"], node_9.inputs[0])
+    group.links.new(group.nodes["Flip Faces.001"].outputs["Mesh"], node_9.inputs[1])
+    group.links.new(group.nodes["Fill Curve.001"].outputs["Mesh"], node_9.inputs[2])
+    group.links.new(group.nodes["Merge by Distance"].outputs["Geometry"], node_10.inputs[0])
+    # SETTING GROUP INPUT DEFAULTS
+    group.interface.items_tree["Resolution"].default_value = 32
+    group.interface.items_tree["Resolution"].hide_value = False
+    group.interface.items_tree["Resolution"].hide_in_modifier = False
+    group.interface.items_tree["Resolution"].force_non_field = False
+    group.interface.items_tree["Resolution"].min_value = 3
+    group.interface.items_tree["Resolution"].max_value = 512
+    group.interface.items_tree["Radius"].subtype = "DISTANCE"
+    group.interface.items_tree["Radius"].default_value = 1.0
+    group.interface.items_tree["Radius"].hide_value = False
+    group.interface.items_tree["Radius"].hide_in_modifier = False
+    group.interface.items_tree["Radius"].force_non_field = False
+    group.interface.items_tree["Radius"].min_value = 0.0
+    group.interface.items_tree["Radius"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["Fill"].default_value = False
+    group.interface.items_tree["Fill"].hide_value = False
+    group.interface.items_tree["Fill"].hide_in_modifier = False
+    group.interface.items_tree["Fill"].force_non_field = False
+    group.interface.items_tree["Fill Type"].default_value = "N-Gon"
+    group.interface.items_tree["Fill Type"].hide_value = False
+    group.interface.items_tree["Fill Type"].hide_in_modifier = False
+    group.interface.items_tree["Fill Type"].force_non_field = False
+    group.interface.items_tree["Flip Faces"].default_value = False
+    group.interface.items_tree["Flip Faces"].hide_value = True
+    group.interface.items_tree["Flip Faces"].hide_in_modifier = False
+    group.interface.items_tree["Flip Faces"].force_non_field = True
+
+def gn_cone():
+    group = bpy.data.node_groups.new(".EMC Cone", "GeometryNodeTree")
+    group.is_modifier = True
+    group.color_tag = "GEOMETRY"
+
+    # CREATING NODE: Group Input
+    node_0 = group.nodes.new("NodeGroupInput")
+    node_0.name = "Group Input"
+    node_0.location[0] = -340.0
+    node_0.location[1] = 0.0
+    # SETTING VALUES OF NODE: Group Input
+
+    # CREATING NODE: Group Output
+    node_1 = group.nodes.new("NodeGroupOutput")
+    node_1.name = "Group Output"
+    node_1.location[0] = 720.0
+    node_1.location[1] = 100.0
+    # SETTING VALUES OF NODE: Group Output
+
+    # CREATING NODE: Cone
+    node_2 = group.nodes.new("GeometryNodeMeshCone")
+    node_2.name = "Cone"
+    node_2.location[0] = 0.0
+    node_2.location[1] = 0.0
+    # SETTING VALUES OF NODE: Cone
+    setattr(node_2, "fill_type", "TRIANGLE_FAN")
+
+    # CREATING NODE: Cone.001
+    node_3 = group.nodes.new("GeometryNodeMeshCone")
+    node_3.name = "Cone.001"
+    node_3.location[0] = 0.0
+    node_3.location[1] = 340.0
+    # SETTING VALUES OF NODE: Cone.001
+    setattr(node_3, "fill_type", "NGON")
+
+    # CREATING NODE: Menu Switch
+    node_4 = group.nodes.new("GeometryNodeMenuSwitch")
+    node_4.name = "Menu Switch"
+    node_4.location[0] = 540.0
+    node_4.location[1] = 100.0
+    # SETTING VALUES OF NODE: Menu Switch
+    setattr(node_4, "data_type", "GEOMETRY")
+    node_4.enum_items.remove(node_4.enum_items[0])
+    node_4.enum_items.remove(node_4.enum_items[0])
+    node_4.enum_items.new("N-Gon")
+    node_4.enum_items.new("Triangle")
+
+    # CREATING NODE: Store Named Attribute
+    node_5 = group.nodes.new("GeometryNodeStoreNamedAttribute")
+    node_5.name = "Store Named Attribute"
+    node_5.location[0] = 180.0
+    node_5.location[1] = 340.0
+    # SETTING VALUES OF NODE: Store Named Attribute
+    setattr(node_5, "data_type", "FLOAT")
+    setattr(node_5, "domain", "EDGE")
+    node_5.inputs[2].default_value = "crease_edge"
+    node_5.inputs[3].default_value = True
+
+    # CREATING NODE: Boolean Math
+    node_6 = group.nodes.new("FunctionNodeBooleanMath")
+    node_6.name = "Boolean Math"
+    node_6.location[0] = 180.0
+    node_6.location[1] = 140.0
+    node_6.hide = True
+    # SETTING VALUES OF NODE: Boolean Math
+    setattr(node_6, "operation", "OR")
+
+    # CREATING NODE: Store Named Attribute.002
+    node_7 = group.nodes.new("GeometryNodeStoreNamedAttribute")
+    node_7.name = "Store Named Attribute.002"
+    node_7.location[0] = 360.0
+    node_7.location[1] = 340.0
+    # SETTING VALUES OF NODE: Store Named Attribute.002
+    setattr(node_7, "data_type", "FLOAT2")
+    setattr(node_7, "domain", "CORNER")
+    node_7.inputs[1].default_value = True
+    node_7.inputs[2].default_value = "UVMap"
+
+    # CREATING NODE: Store Named Attribute.001
+    node_8 = group.nodes.new("GeometryNodeStoreNamedAttribute")
+    node_8.name = "Store Named Attribute.001"
+    node_8.location[0] = 180.0
+    node_8.location[1] = 0.0
+    # SETTING VALUES OF NODE: Store Named Attribute.001
+    setattr(node_8, "data_type", "FLOAT")
+    setattr(node_8, "domain", "EDGE")
+    node_8.inputs[2].default_value = "crease_edge"
+    node_8.inputs[3].default_value = True
+
+    # CREATING NODE: Boolean Math.001
+    node_9 = group.nodes.new("FunctionNodeBooleanMath")
+    node_9.name = "Boolean Math.001"
+    node_9.location[0] = 180.0
+    node_9.location[1] = -200.0
+    node_9.hide = True
+    # SETTING VALUES OF NODE: Boolean Math.001
+    setattr(node_9, "operation", "OR")
+
+    # CREATING NODE: Store Named Attribute.003
+    node_10 = group.nodes.new("GeometryNodeStoreNamedAttribute")
+    node_10.name = "Store Named Attribute.003"
+    node_10.location[0] = 360.0
+    node_10.location[1] = 0.0
+    # SETTING VALUES OF NODE: Store Named Attribute.003
+    setattr(node_10, "data_type", "FLOAT2")
+    setattr(node_10, "domain", "CORNER")
+    node_10.inputs[1].default_value = True
+    node_10.inputs[2].default_value = "UVMap"
+
+    # CREATING GROUP INPUTS AND OUTPUTS
+    group.interface.new_socket(name="Cap Type",in_out="INPUT",socket_type="NodeSocketMenu")
+    group.interface.new_socket(name="Vertices",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Side Segments",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Fill Segments",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Radius Top",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Radius Bottom",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Depth",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Geometry",in_out="OUTPUT",socket_type="NodeSocketGeometry")
+    # CONNECTING, SETTING PARENTS, AND CLEANING INPUTS
+    group.links.new(group.nodes["Menu Switch"].outputs["Output"], node_1.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Vertices"], node_2.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Side Segments"], node_2.inputs[1])
+    group.links.new(group.nodes["Group Input"].outputs["Fill Segments"], node_2.inputs[2])
+    group.links.new(group.nodes["Group Input"].outputs["Radius Top"], node_2.inputs[3])
+    group.links.new(group.nodes["Group Input"].outputs["Radius Bottom"], node_2.inputs[4])
+    group.links.new(group.nodes["Group Input"].outputs["Depth"], node_2.inputs[5])
+    group.links.new(group.nodes["Group Input"].outputs["Vertices"], node_3.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Side Segments"], node_3.inputs[1])
+    group.links.new(group.nodes["Group Input"].outputs["Fill Segments"], node_3.inputs[2])
+    group.links.new(group.nodes["Group Input"].outputs["Radius Top"], node_3.inputs[3])
+    group.links.new(group.nodes["Group Input"].outputs["Radius Bottom"], node_3.inputs[4])
+    group.links.new(group.nodes["Group Input"].outputs["Depth"], node_3.inputs[5])
+    group.links.new(group.nodes["Group Input"].outputs["Cap Type"], node_4.inputs[0])
+    group.links.new(group.nodes["Store Named Attribute.002"].outputs["Geometry"], node_4.inputs[1])
+    group.links.new(group.nodes["Store Named Attribute.003"].outputs["Geometry"], node_4.inputs[2])
+    group.links.new(group.nodes["Cone.001"].outputs["Mesh"], node_5.inputs[0])
+    group.links.new(group.nodes["Boolean Math"].outputs["Boolean"], node_5.inputs[1])
+    group.links.new(group.nodes["Cone.001"].outputs["Top"], node_6.inputs[0])
+    group.links.new(group.nodes["Cone.001"].outputs["Bottom"], node_6.inputs[1])
+    group.links.new(group.nodes["Store Named Attribute"].outputs["Geometry"], node_7.inputs[0])
+    group.links.new(group.nodes["Cone.001"].outputs["UV Map"], node_7.inputs[3])
+    group.links.new(group.nodes["Cone"].outputs["Mesh"], node_8.inputs[0])
+    group.links.new(group.nodes["Boolean Math.001"].outputs["Boolean"], node_8.inputs[1])
+    group.links.new(group.nodes["Cone"].outputs["Top"], node_9.inputs[0])
+    group.links.new(group.nodes["Cone"].outputs["Bottom"], node_9.inputs[1])
+    group.links.new(group.nodes["Store Named Attribute.001"].outputs["Geometry"], node_10.inputs[0])
+    group.links.new(group.nodes["Cone"].outputs["UV Map"], node_10.inputs[3])
+    # SETTING GROUP INPUT DEFAULTS
+    group.interface.items_tree["Cap Type"].default_value = "N-Gon"
+    group.interface.items_tree["Cap Type"].hide_value = False
+    group.interface.items_tree["Cap Type"].hide_in_modifier = False
+    group.interface.items_tree["Cap Type"].force_non_field = False
+    group.interface.items_tree["Vertices"].default_value = 32
+    group.interface.items_tree["Vertices"].hide_value = False
+    group.interface.items_tree["Vertices"].hide_in_modifier = False
+    group.interface.items_tree["Vertices"].force_non_field = False
+    group.interface.items_tree["Vertices"].min_value = 3
+    group.interface.items_tree["Vertices"].max_value = 512
+    group.interface.items_tree["Side Segments"].default_value = 1
+    group.interface.items_tree["Side Segments"].hide_value = False
+    group.interface.items_tree["Side Segments"].hide_in_modifier = False
+    group.interface.items_tree["Side Segments"].force_non_field = False
+    group.interface.items_tree["Side Segments"].min_value = 1
+    group.interface.items_tree["Side Segments"].max_value = 512
+    group.interface.items_tree["Fill Segments"].default_value = 1
+    group.interface.items_tree["Fill Segments"].hide_value = False
+    group.interface.items_tree["Fill Segments"].hide_in_modifier = False
+    group.interface.items_tree["Fill Segments"].force_non_field = False
+    group.interface.items_tree["Fill Segments"].min_value = 1
+    group.interface.items_tree["Fill Segments"].max_value = 512
+    group.interface.items_tree["Radius Top"].subtype = "DISTANCE"
+    group.interface.items_tree["Radius Top"].default_value = 0.0
+    group.interface.items_tree["Radius Top"].hide_value = False
+    group.interface.items_tree["Radius Top"].hide_in_modifier = False
+    group.interface.items_tree["Radius Top"].force_non_field = False
+    group.interface.items_tree["Radius Top"].min_value = 0.0
+    group.interface.items_tree["Radius Top"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["Radius Bottom"].subtype = "DISTANCE"
+    group.interface.items_tree["Radius Bottom"].default_value = 1.0
+    group.interface.items_tree["Radius Bottom"].hide_value = False
+    group.interface.items_tree["Radius Bottom"].hide_in_modifier = False
+    group.interface.items_tree["Radius Bottom"].force_non_field = False
+    group.interface.items_tree["Radius Bottom"].min_value = 0.0
+    group.interface.items_tree["Radius Bottom"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["Depth"].subtype = "DISTANCE"
+    group.interface.items_tree["Depth"].default_value = 2.0
+    group.interface.items_tree["Depth"].hide_value = False
+    group.interface.items_tree["Depth"].hide_in_modifier = False
+    group.interface.items_tree["Depth"].force_non_field = False
+    group.interface.items_tree["Depth"].min_value = 0.0
+    group.interface.items_tree["Depth"].max_value = 3.4028234663852886e+38
+
+def gn_plane():
+    group = bpy.data.node_groups.new(".EMC Plane", "GeometryNodeTree")
+    group.is_modifier = True
+    group.color_tag = "GEOMETRY"
+
+    # CREATING NODE: Group Input
+    node_0 = group.nodes.new("NodeGroupInput")
+    node_0.name = "Group Input"
+    node_0.location[0] = -60.0
+    node_0.location[1] = 60.0
+    # SETTING VALUES OF NODE: Group Input
+
+    # CREATING NODE: Group Output
+    node_1 = group.nodes.new("NodeGroupOutput")
+    node_1.name = "Group Output"
+    node_1.location[0] = 480.0
+    node_1.location[1] = 60.0
+    # SETTING VALUES OF NODE: Group Output
+
+    # CREATING NODE: Grid
+    node_2 = group.nodes.new("GeometryNodeMeshGrid")
+    node_2.name = "Grid"
+    node_2.location[0] = 120.0
+    node_2.location[1] = 60.0
+    # SETTING VALUES OF NODE: Grid
+
+    # CREATING NODE: Store Named Attribute
+    node_3 = group.nodes.new("GeometryNodeStoreNamedAttribute")
+    node_3.name = "Store Named Attribute"
+    node_3.location[0] = 300.0
+    node_3.location[1] = 60.0
+    # SETTING VALUES OF NODE: Store Named Attribute
+    setattr(node_3, "data_type", "FLOAT2")
+    setattr(node_3, "domain", "CORNER")
+    node_3.inputs[1].default_value = True
+    node_3.inputs[2].default_value = "UVMap"
+
+    # CREATING GROUP INPUTS AND OUTPUTS
+    group.interface.new_socket(name="X Scale",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Y Scale",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="X Subdivision",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Y Subdivision",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Geometry",in_out="OUTPUT",socket_type="NodeSocketGeometry")
+    # CONNECTING, SETTING PARENTS, AND CLEANING INPUTS
+    group.links.new(group.nodes["Store Named Attribute"].outputs["Geometry"], node_1.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["X Scale"], node_2.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Y Scale"], node_2.inputs[1])
+    group.links.new(group.nodes["Group Input"].outputs["X Subdivision"], node_2.inputs[2])
+    group.links.new(group.nodes["Group Input"].outputs["Y Subdivision"], node_2.inputs[3])
+    group.links.new(group.nodes["Grid"].outputs["Mesh"], node_3.inputs[0])
+    group.links.new(group.nodes["Grid"].outputs["UV Map"], node_3.inputs[3])
+    # SETTING GROUP INPUT DEFAULTS
+    group.interface.items_tree["X Scale"].subtype = "DISTANCE"
+    group.interface.items_tree["X Scale"].default_value = 2.0
+    group.interface.items_tree["X Scale"].hide_value = False
+    group.interface.items_tree["X Scale"].hide_in_modifier = False
+    group.interface.items_tree["X Scale"].force_non_field = False
+    group.interface.items_tree["X Scale"].min_value = 0.0
+    group.interface.items_tree["X Scale"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["Y Scale"].subtype = "DISTANCE"
+    group.interface.items_tree["Y Scale"].default_value = 2.0
+    group.interface.items_tree["Y Scale"].hide_value = False
+    group.interface.items_tree["Y Scale"].hide_in_modifier = False
+    group.interface.items_tree["Y Scale"].force_non_field = False
+    group.interface.items_tree["Y Scale"].min_value = 0.0
+    group.interface.items_tree["Y Scale"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["X Subdivision"].default_value = 2
+    group.interface.items_tree["X Subdivision"].hide_value = False
+    group.interface.items_tree["X Subdivision"].hide_in_modifier = False
+    group.interface.items_tree["X Subdivision"].force_non_field = False
+    group.interface.items_tree["X Subdivision"].min_value = 2
+    group.interface.items_tree["X Subdivision"].max_value = 1000
+    group.interface.items_tree["Y Subdivision"].default_value = 2
+    group.interface.items_tree["Y Subdivision"].hide_value = False
+    group.interface.items_tree["Y Subdivision"].hide_in_modifier = False
+    group.interface.items_tree["Y Subdivision"].force_non_field = False
+    group.interface.items_tree["Y Subdivision"].min_value = 2
+    group.interface.items_tree["Y Subdivision"].max_value = 1000
+
+def gn_sphere():
+    group = bpy.data.node_groups.new(".EMC Sphere", "GeometryNodeTree")
+    group.is_modifier = True
+    group.color_tag = "GEOMETRY"
+
+    # CREATING NODE: Group Input
+    node_0 = group.nodes.new("NodeGroupInput")
+    node_0.name = "Group Input"
+    node_0.location[0] = -200.0
+    node_0.location[1] = -340.0
+    # SETTING VALUES OF NODE: Group Input
+
+    # CREATING NODE: Group Output
+    node_1 = group.nodes.new("NodeGroupOutput")
+    node_1.name = "Group Output"
+    node_1.location[0] = 601.0809326171875
+    node_1.location[1] = -340.0
+    # SETTING VALUES OF NODE: Group Output
+
+    # CREATING NODE: UV Sphere
+    node_2 = group.nodes.new("GeometryNodeMeshUVSphere")
+    node_2.name = "UV Sphere"
+    node_2.location[0] = -20.0
+    node_2.location[1] = -320.0
+    # SETTING VALUES OF NODE: UV Sphere
+
+    # CREATING NODE: Store Named Attribute
+    node_3 = group.nodes.new("GeometryNodeStoreNamedAttribute")
+    node_3.name = "Store Named Attribute"
+    node_3.location[0] = 160.0
+    node_3.location[1] = -320.0
+    # SETTING VALUES OF NODE: Store Named Attribute
+    setattr(node_3, "data_type", "FLOAT2")
+    setattr(node_3, "domain", "CORNER")
+    node_3.inputs[1].default_value = True
+    node_3.inputs[2].default_value = "UVMap"
+
+    # CREATING NODE: Bounding Box
+    node_4 = group.nodes.new("GeometryNodeBoundBox")
+    node_4.name = "Bounding Box"
+    node_4.location[0] = 160.0
+    node_4.location[1] = -520.0
+    # SETTING VALUES OF NODE: Bounding Box
+    try:
+        node_4.outputs["Bounding Box"].hide = True
+    except:
+        pass
+    try:
+        node_4.outputs["Max"].hide = True
+    except:
+        pass
+
+    # CREATING NODE: Vector Math.001
+    node_5 = group.nodes.new("ShaderNodeVectorMath")
+    node_5.name = "Vector Math.001"
+    node_5.location[0] = 160.0
+    node_5.location[1] = -600.0
+    # SETTING VALUES OF NODE: Vector Math.001
+    setattr(node_5, "operation", "MULTIPLY")
+    node_5.inputs[1].default_value[0] = 0.0
+    node_5.inputs[1].default_value[1] = 0.0
+    node_5.inputs[1].default_value[2] = -1.0
+    node_5.inputs[2].default_value[0] = 0.0
+    node_5.inputs[2].default_value[1] = 0.0
+    node_5.inputs[2].default_value[2] = 0.0
+    node_5.inputs[3].default_value = 1.0
+
+    # CREATING NODE: Vector Math.002
+    node_6 = group.nodes.new("ShaderNodeVectorMath")
+    node_6.name = "Vector Math.002"
+    node_6.location[0] = 160.0
+    node_6.location[1] = -800.0
+    node_6.hide = True
+    # SETTING VALUES OF NODE: Vector Math.002
+    setattr(node_6, "operation", "SCALE")
+    node_6.inputs[1].default_value[0] = 0.0
+    node_6.inputs[1].default_value[1] = 0.0
+    node_6.inputs[1].default_value[2] = -1.0
+    node_6.inputs[2].default_value[0] = 0.0
+    node_6.inputs[2].default_value[1] = 0.0
+    node_6.inputs[2].default_value[2] = 0.0
+
+    # CREATING NODE: Set Position
+    node_7 = group.nodes.new("GeometryNodeSetPosition")
+    node_7.name = "Set Position"
+    node_7.location[0] = 340.0
+    node_7.location[1] = -320.0
+    # SETTING VALUES OF NODE: Set Position
+    node_7.inputs[1].default_value = True
+    node_7.inputs[2].default_value[0] = 0.0
+    node_7.inputs[2].default_value[1] = 0.0
+    node_7.inputs[2].default_value[2] = 0.0
+
+    # CREATING GROUP INPUTS AND OUTPUTS
+    group.interface.new_socket(name="Segments",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Rings",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Radius",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Origin at Base",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Geometry",in_out="OUTPUT",socket_type="NodeSocketGeometry")
+    # CONNECTING, SETTING PARENTS, AND CLEANING INPUTS
+    group.links.new(group.nodes["Set Position"].outputs["Geometry"], node_1.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Segments"], node_2.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Rings"], node_2.inputs[1])
+    group.links.new(group.nodes["Group Input"].outputs["Radius"], node_2.inputs[2])
+    group.links.new(group.nodes["UV Sphere"].outputs["Mesh"], node_3.inputs[0])
+    group.links.new(group.nodes["UV Sphere"].outputs["UV Map"], node_3.inputs[3])
+    group.links.new(group.nodes["UV Sphere"].outputs["Mesh"], node_4.inputs[0])
+    group.links.new(group.nodes["Bounding Box"].outputs["Min"], node_5.inputs[0])
+    group.links.new(group.nodes["Vector Math.001"].outputs["Vector"], node_6.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Origin at Base"], node_6.inputs[3])
+    group.links.new(group.nodes["Store Named Attribute"].outputs["Geometry"], node_7.inputs[0])
+    group.links.new(group.nodes["Vector Math.002"].outputs["Vector"], node_7.inputs[3])
+    # SETTING GROUP INPUT DEFAULTS
+    group.interface.items_tree["Segments"].default_value = 32
+    group.interface.items_tree["Segments"].hide_value = False
+    group.interface.items_tree["Segments"].hide_in_modifier = False
+    group.interface.items_tree["Segments"].force_non_field = False
+    group.interface.items_tree["Segments"].min_value = 3
+    group.interface.items_tree["Segments"].max_value = 1024
+    group.interface.items_tree["Rings"].default_value = 16
+    group.interface.items_tree["Rings"].hide_value = False
+    group.interface.items_tree["Rings"].hide_in_modifier = False
+    group.interface.items_tree["Rings"].force_non_field = False
+    group.interface.items_tree["Rings"].min_value = 2
+    group.interface.items_tree["Rings"].max_value = 1024
+    group.interface.items_tree["Radius"].subtype = "DISTANCE"
+    group.interface.items_tree["Radius"].default_value = 1.0
+    group.interface.items_tree["Radius"].hide_value = False
+    group.interface.items_tree["Radius"].hide_in_modifier = False
+    group.interface.items_tree["Radius"].force_non_field = False
+    group.interface.items_tree["Radius"].min_value = 0.0
+    group.interface.items_tree["Radius"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["Origin at Base"].subtype = "FACTOR"
+    group.interface.items_tree["Origin at Base"].default_value = 0.0
+    group.interface.items_tree["Origin at Base"].hide_value = False
+    group.interface.items_tree["Origin at Base"].hide_in_modifier = False
+    group.interface.items_tree["Origin at Base"].force_non_field = True
+    group.interface.items_tree["Origin at Base"].min_value = 0.0
+    group.interface.items_tree["Origin at Base"].max_value = 1.0
+
+def gn_torus():
+    group = bpy.data.node_groups.new("EMC Torus", "GeometryNodeTree")
+    group.is_modifier = True
+    group.color_tag = "GEOMETRY"
+
+    # CREATING NODE: Group Input
+    node_0 = group.nodes.new("NodeGroupInput")
+    node_0.name = "Group Input"
+    node_0.location[0] = -280.0
+    node_0.location[1] = -320.0
+    # SETTING VALUES OF NODE: Group Input
+
+    # CREATING NODE: Group Output
+    node_1 = group.nodes.new("NodeGroupOutput")
+    node_1.name = "Group Output"
+    node_1.location[0] = 1000.0
+    node_1.location[1] = -280.0
+    # SETTING VALUES OF NODE: Group Output
+
+    # CREATING NODE: Curve Circle
+    node_2 = group.nodes.new("GeometryNodeCurvePrimitiveCircle")
+    node_2.name = "Curve Circle"
+    node_2.location[0] = -80.0
+    node_2.location[1] = -380.0
+    # SETTING VALUES OF NODE: Curve Circle
+    setattr(node_2, "mode", "RADIUS")
+    node_2.inputs[1].default_value[0] = -1.0
+    node_2.inputs[1].default_value[1] = 0.0
+    node_2.inputs[1].default_value[2] = 0.0
+    node_2.inputs[2].default_value[0] = 0.0
+    node_2.inputs[2].default_value[1] = 1.0
+    node_2.inputs[2].default_value[2] = 0.0
+    node_2.inputs[3].default_value[0] = 1.0
+    node_2.inputs[3].default_value[1] = 0.0
+    node_2.inputs[3].default_value[2] = 0.0
+
+    # CREATING NODE: Curve Circle.001
+    node_3 = group.nodes.new("GeometryNodeCurvePrimitiveCircle")
+    node_3.name = "Curve Circle.001"
+    node_3.location[0] = -80.0
+    node_3.location[1] = -240.0
+    # SETTING VALUES OF NODE: Curve Circle.001
+    setattr(node_3, "mode", "RADIUS")
+    node_3.inputs[1].default_value[0] = -1.0
+    node_3.inputs[1].default_value[1] = 0.0
+    node_3.inputs[1].default_value[2] = 0.0
+    node_3.inputs[2].default_value[0] = 0.0
+    node_3.inputs[2].default_value[1] = 1.0
+    node_3.inputs[2].default_value[2] = 0.0
+    node_3.inputs[3].default_value[0] = 1.0
+    node_3.inputs[3].default_value[1] = 0.0
+    node_3.inputs[3].default_value[2] = 0.0
+
+    # CREATING NODE: Curve to Mesh
+    node_4 = group.nodes.new("GeometryNodeCurveToMesh")
+    node_4.name = "Curve to Mesh"
+    node_4.location[0] = 280.0
+    node_4.location[1] = -280.0
+    # SETTING VALUES OF NODE: Curve to Mesh
+    node_4.inputs[2].default_value = False
+
+    # CREATING NODE: Set Shade Smooth
+    node_5 = group.nodes.new("GeometryNodeSetShadeSmooth")
+    node_5.name = "Set Shade Smooth"
+    node_5.location[0] = 639.5554809570312
+    node_5.location[1] = -280.0
+    # SETTING VALUES OF NODE: Set Shade Smooth
+    setattr(node_5, "domain", "FACE")
+    node_5.inputs[1].default_value = True
+    node_5.inputs[2].default_value = False
+
+    # CREATING NODE: Set Position.001
+    node_6 = group.nodes.new("GeometryNodeSetPosition")
+    node_6.name = "Set Position.001"
+    node_6.location[0] = 459.9999694824219
+    node_6.location[1] = -280.0
+    # SETTING VALUES OF NODE: Set Position.001
+    node_6.inputs[1].default_value = True
+    node_6.inputs[2].default_value[0] = 0.0
+    node_6.inputs[2].default_value[1] = 0.0
+    node_6.inputs[2].default_value[2] = 0.0
+
+    # CREATING NODE: Bounding Box
+    node_7 = group.nodes.new("GeometryNodeBoundBox")
+    node_7.name = "Bounding Box"
+    node_7.location[0] = 280.0
+    node_7.location[1] = -420.0
+    # SETTING VALUES OF NODE: Bounding Box
+    try:
+        node_7.outputs["Bounding Box"].hide = True
+    except:
+        pass
+    try:
+        node_7.outputs["Max"].hide = True
+    except:
+        pass
+
+    # CREATING NODE: Vector Math.001
+    node_8 = group.nodes.new("ShaderNodeVectorMath")
+    node_8.name = "Vector Math.001"
+    node_8.location[0] = 280.0
+    node_8.location[1] = -500.0
+    # SETTING VALUES OF NODE: Vector Math.001
+    setattr(node_8, "operation", "MULTIPLY")
+    node_8.inputs[1].default_value[0] = 0.0
+    node_8.inputs[1].default_value[1] = 0.0
+    node_8.inputs[1].default_value[2] = -1.0
+    node_8.inputs[2].default_value[0] = 0.0
+    node_8.inputs[2].default_value[1] = 0.0
+    node_8.inputs[2].default_value[2] = 0.0
+    node_8.inputs[3].default_value = 1.0
+
+    # CREATING NODE: Vector Math.002
+    node_9 = group.nodes.new("ShaderNodeVectorMath")
+    node_9.name = "Vector Math.002"
+    node_9.location[0] = 280.0
+    node_9.location[1] = -700.0
+    node_9.hide = True
+    # SETTING VALUES OF NODE: Vector Math.002
+    setattr(node_9, "operation", "SCALE")
+    node_9.inputs[1].default_value[0] = 0.0
+    node_9.inputs[1].default_value[1] = 0.0
+    node_9.inputs[1].default_value[2] = -1.0
+    node_9.inputs[2].default_value[0] = 0.0
+    node_9.inputs[2].default_value[1] = 0.0
+    node_9.inputs[2].default_value[2] = 0.0
+
+    # CREATING NODE: Capture Attribute
+    node_10 = group.nodes.new("GeometryNodeCaptureAttribute")
+    node_10.name = "Capture Attribute"
+    node_10.location[0] = 100.0
+    node_10.location[1] = -240.0
+    # SETTING VALUES OF NODE: Capture Attribute
+    setattr(node_10, "domain", "POINT")
+    node_10.capture_items.new("BOOLEAN", "Result")
+
+    # CREATING NODE: Capture Attribute.001
+    node_11 = group.nodes.new("GeometryNodeCaptureAttribute")
+    node_11.name = "Capture Attribute.001"
+    node_11.location[0] = 100.0
+    node_11.location[1] = -380.0
+    # SETTING VALUES OF NODE: Capture Attribute.001
+    setattr(node_11, "domain", "POINT")
+    node_11.capture_items.new("BOOLEAN", "Result")
+
+    # CREATING NODE: Index
+    node_12 = group.nodes.new("GeometryNodeInputIndex")
+    node_12.name = "Index"
+    node_12.location[0] = -80.0
+    node_12.location[1] = -160.0
+    # SETTING VALUES OF NODE: Index
+
+    # CREATING NODE: Compare
+    node_13 = group.nodes.new("FunctionNodeCompare")
+    node_13.name = "Compare"
+    node_13.location[0] = 100.0
+    node_13.location[1] = -520.0
+    # SETTING VALUES OF NODE: Compare
+    setattr(node_13, "operation", "EQUAL")
+    setattr(node_13, "data_type", "INT")
+    setattr(node_13, "mode", "ELEMENT")
+    node_13.inputs[0].default_value = 0.0
+    node_13.inputs[1].default_value = 0.0
+    node_13.inputs[4].default_value[0] = 0.0
+    node_13.inputs[4].default_value[1] = 0.0
+    node_13.inputs[4].default_value[2] = 0.0
+    node_13.inputs[5].default_value[0] = 0.0
+    node_13.inputs[5].default_value[1] = 0.0
+    node_13.inputs[5].default_value[2] = 0.0
+    node_13.inputs[6].default_value[0] = 0.800000011920929
+    node_13.inputs[6].default_value[1] = 0.800000011920929
+    node_13.inputs[6].default_value[2] = 0.800000011920929
+    node_13.inputs[7].default_value[0] = 0.800000011920929
+    node_13.inputs[7].default_value[1] = 0.800000011920929
+    node_13.inputs[7].default_value[2] = 0.800000011920929
+    node_13.inputs[8].default_value = ""
+    node_13.inputs[9].default_value = ""
+    node_13.inputs[10].default_value = 0.8999999761581421
+    node_13.inputs[11].default_value = 0.08726649731397629
+    node_13.inputs[12].default_value = 0.0010000000474974513
+
+    # CREATING NODE: UV Unwrap
+    node_14 = group.nodes.new("GeometryNodeUVUnwrap")
+    node_14.name = "UV Unwrap"
+    node_14.location[0] = 640.0
+    node_14.location[1] = -440.0
+    # SETTING VALUES OF NODE: UV Unwrap
+    node_14.inputs[0].default_value = True
+    node_14.inputs[2].default_value = 0.0010000000474974513
+    node_14.inputs[3].default_value = True
+
+    # CREATING NODE: Math
+    node_15 = group.nodes.new("ShaderNodeMath")
+    node_15.name = "Math"
+    node_15.location[0] = 460.0
+    node_15.location[1] = -440.0
+    # SETTING VALUES OF NODE: Math
+    setattr(node_15, "operation", "MAXIMUM")
+    node_15.inputs[2].default_value = 0.5
+
+    # CREATING NODE: Store Named Attribute
+    node_16 = group.nodes.new("GeometryNodeStoreNamedAttribute")
+    node_16.name = "Store Named Attribute"
+    node_16.location[0] = 820.0
+    node_16.location[1] = -280.0
+    # SETTING VALUES OF NODE: Store Named Attribute
+    setattr(node_16, "data_type", "FLOAT2")
+    setattr(node_16, "domain", "CORNER")
+    node_16.inputs[1].default_value = True
+    node_16.inputs[2].default_value = "UVMap"
+
+    # CREATING NODE: Math.001
+    node_17 = group.nodes.new("ShaderNodeMath")
+    node_17.name = "Math.001"
+    node_17.location[0] = -80.0
+    node_17.location[1] = -520.0
+    # SETTING VALUES OF NODE: Math.001
+    setattr(node_17, "operation", "DIVIDE")
+    node_17.inputs[1].default_value = 2.0
+    node_17.inputs[2].default_value = 0.5
+
+    # CREATING NODE: Compare.001
+    node_18 = group.nodes.new("FunctionNodeCompare")
+    node_18.name = "Compare.001"
+    node_18.location[0] = 100.0
+    node_18.location[1] = -60.0
+    # SETTING VALUES OF NODE: Compare.001
+    setattr(node_18, "operation", "EQUAL")
+    setattr(node_18, "data_type", "INT")
+    setattr(node_18, "mode", "ELEMENT")
+    node_18.inputs[0].default_value = 0.0
+    node_18.inputs[1].default_value = 0.0
+    node_18.inputs[3].default_value = 0
+    node_18.inputs[4].default_value[0] = 0.0
+    node_18.inputs[4].default_value[1] = 0.0
+    node_18.inputs[4].default_value[2] = 0.0
+    node_18.inputs[5].default_value[0] = 0.0
+    node_18.inputs[5].default_value[1] = 0.0
+    node_18.inputs[5].default_value[2] = 0.0
+    node_18.inputs[6].default_value[0] = 0.800000011920929
+    node_18.inputs[6].default_value[1] = 0.800000011920929
+    node_18.inputs[6].default_value[2] = 0.800000011920929
+    node_18.inputs[7].default_value[0] = 0.800000011920929
+    node_18.inputs[7].default_value[1] = 0.800000011920929
+    node_18.inputs[7].default_value[2] = 0.800000011920929
+    node_18.inputs[8].default_value = ""
+    node_18.inputs[9].default_value = ""
+    node_18.inputs[10].default_value = 0.8999999761581421
+    node_18.inputs[11].default_value = 0.08726649731397629
+    node_18.inputs[12].default_value = 0.0010000000474974513
+
+    # CREATING GROUP INPUTS AND OUTPUTS
+    group.interface.new_socket(name="Major Radius",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Minor Radius",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Major Segments",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Minor Segments",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Origin at Base",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Geometry",in_out="OUTPUT",socket_type="NodeSocketGeometry")
+    # CONNECTING, SETTING PARENTS, AND CLEANING INPUTS
+    group.links.new(group.nodes["Store Named Attribute"].outputs["Geometry"], node_1.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Minor Segments"], node_2.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Minor Radius"], node_2.inputs[4])
+    group.links.new(group.nodes["Group Input"].outputs["Major Segments"], node_3.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Major Radius"], node_3.inputs[4])
+    group.links.new(group.nodes["Capture Attribute"].outputs["Geometry"], node_4.inputs[0])
+    group.links.new(group.nodes["Capture Attribute.001"].outputs["Geometry"], node_4.inputs[1])
+    group.links.new(group.nodes["Set Position.001"].outputs["Geometry"], node_5.inputs[0])
+    group.links.new(group.nodes["Curve to Mesh"].outputs["Mesh"], node_6.inputs[0])
+    group.links.new(group.nodes["Vector Math.002"].outputs["Vector"], node_6.inputs[3])
+    group.links.new(group.nodes["Curve to Mesh"].outputs["Mesh"], node_7.inputs[0])
+    group.links.new(group.nodes["Bounding Box"].outputs["Min"], node_8.inputs[0])
+    group.links.new(group.nodes["Vector Math.001"].outputs["Vector"], node_9.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Origin at Base"], node_9.inputs[3])
+    group.links.new(group.nodes["Curve Circle.001"].outputs["Curve"], node_10.inputs[0])
+    group.links.new(group.nodes["Compare.001"].outputs["Result"], node_10.inputs[1])
+    group.links.new(group.nodes["Curve Circle"].outputs["Curve"], node_11.inputs[0])
+    group.links.new(group.nodes["Compare"].outputs["Result"], node_11.inputs[1])
+    group.links.new(group.nodes["Index"].outputs["Index"], node_13.inputs[2])
+    group.links.new(group.nodes["Math.001"].outputs["Value"], node_13.inputs[3])
+    group.links.new(group.nodes["Math"].outputs["Value"], node_14.inputs[1])
+    group.links.new(group.nodes["Capture Attribute"].outputs["Result"], node_15.inputs[0])
+    group.links.new(group.nodes["Capture Attribute.001"].outputs["Result"], node_15.inputs[1])
+    group.links.new(group.nodes["Set Shade Smooth"].outputs["Geometry"], node_16.inputs[0])
+    group.links.new(group.nodes["UV Unwrap"].outputs["UV"], node_16.inputs[3])
+    group.links.new(group.nodes["Group Input"].outputs["Minor Segments"], node_17.inputs[0])
+    group.links.new(group.nodes["Index"].outputs["Index"], node_18.inputs[2])
+    # SETTING GROUP INPUT DEFAULTS
+    group.interface.items_tree["Major Radius"].subtype = "DISTANCE"
+    group.interface.items_tree["Major Radius"].default_value = 1.0
+    group.interface.items_tree["Major Radius"].hide_value = False
+    group.interface.items_tree["Major Radius"].hide_in_modifier = False
+    group.interface.items_tree["Major Radius"].force_non_field = False
+    group.interface.items_tree["Major Radius"].min_value = 0.0
+    group.interface.items_tree["Major Radius"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["Minor Radius"].subtype = "DISTANCE"
+    group.interface.items_tree["Minor Radius"].default_value = 0.25
+    group.interface.items_tree["Minor Radius"].hide_value = False
+    group.interface.items_tree["Minor Radius"].hide_in_modifier = False
+    group.interface.items_tree["Minor Radius"].force_non_field = False
+    group.interface.items_tree["Minor Radius"].min_value = 0.0
+    group.interface.items_tree["Minor Radius"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["Major Segments"].default_value = 48
+    group.interface.items_tree["Major Segments"].hide_value = False
+    group.interface.items_tree["Major Segments"].hide_in_modifier = False
+    group.interface.items_tree["Major Segments"].force_non_field = False
+    group.interface.items_tree["Major Segments"].min_value = 3
+    group.interface.items_tree["Major Segments"].max_value = 512
+    group.interface.items_tree["Minor Segments"].default_value = 16
+    group.interface.items_tree["Minor Segments"].hide_value = False
+    group.interface.items_tree["Minor Segments"].hide_in_modifier = False
+    group.interface.items_tree["Minor Segments"].force_non_field = False
+    group.interface.items_tree["Minor Segments"].min_value = 3
+    group.interface.items_tree["Minor Segments"].max_value = 512
+    group.interface.items_tree["Origin at Base"].subtype = "FACTOR"
+    group.interface.items_tree["Origin at Base"].default_value = 0.0
+    group.interface.items_tree["Origin at Base"].hide_value = False
+    group.interface.items_tree["Origin at Base"].hide_in_modifier = False
+    group.interface.items_tree["Origin at Base"].force_non_field = True
+    group.interface.items_tree["Origin at Base"].min_value = 0.0
+    group.interface.items_tree["Origin at Base"].max_value = 1.0
+
+def gn_pipe():
+    group = bpy.data.node_groups.new("EMC Pipe", "GeometryNodeTree")
+    group.is_modifier = True
+
+    # CREATING NODE: Repeat Output
+    node_13 = group.nodes.new("GeometryNodeRepeatOutput")
+    node_13.name = "Repeat Output"
+    node_13.location[0] = -640.0
+    node_13.location[1] = -20.0
+    node_13.repeat_items.new("BOOLEAN", "Top")
+    node_13.repeat_items.new("BOOLEAN", "Side")
+    node_13.repeat_items.new("FLOAT", "Value")
+
+    # SETTING VALUES OF NODE: Repeat Output
+
+    # CREATING NODE: Repeat Input
+    node_17 = group.nodes.new("GeometryNodeRepeatInput")
+    node_17.name = "Repeat Input"
+    node_17.location[0] = -1200.0
+    node_17.location[1] = -20.0
+    node_17.pair_with_output(group.nodes["Repeat Output"])
+
+    # SETTING VALUES OF NODE: Repeat Input
+    node_17.inputs[2].default_value = True
+    node_17.inputs[3].default_value = False
+
+    # CREATING NODE: Group Input
+    node_0 = group.nodes.new("NodeGroupInput")
+    node_0.name = "Group Input"
+    node_0.location[0] = -1560.0
+    node_0.location[1] = -20.0
+    # SETTING VALUES OF NODE: Group Input
+
+    # CREATING NODE: Group Output
+    node_1 = group.nodes.new("NodeGroupOutput")
+    node_1.name = "Group Output"
+    node_1.location[0] = 460.0
+    node_1.location[1] = -20.0
+    # SETTING VALUES OF NODE: Group Output
+
+    # CREATING NODE: Mesh Circle
+    node_2 = group.nodes.new("GeometryNodeMeshCircle")
+    node_2.name = "Mesh Circle"
+    node_2.location[0] = -1380.0
+    node_2.location[1] = -20.0
+    node_2.hide = True
+    # SETTING VALUES OF NODE: Mesh Circle
+    setattr(node_2, "fill_type", "NONE")
+
+    # CREATING NODE: Extrude Mesh.001
+    node_3 = group.nodes.new("GeometryNodeExtrudeMesh")
+    node_3.name = "Extrude Mesh.001"
+    node_3.location[0] = -260.0
+    node_3.location[1] = -20.0
+    # SETTING VALUES OF NODE: Extrude Mesh.001
+    setattr(node_3, "mode", "FACES")
+    node_3.inputs[1].default_value = True
+    node_3.inputs[2].default_value[0] = 0.0
+    node_3.inputs[2].default_value[1] = 0.0
+    node_3.inputs[2].default_value[2] = 0.0
+    node_3.inputs[4].default_value = False
+
+    # CREATING NODE: Join Geometry
+    node_4 = group.nodes.new("GeometryNodeJoinGeometry")
+    node_4.name = "Join Geometry"
+    node_4.location[0] = 100.0
+    node_4.location[1] = -20.0
+    # SETTING VALUES OF NODE: Join Geometry
+
+    # CREATING NODE: Flip Faces
+    node_5 = group.nodes.new("GeometryNodeFlipFaces")
+    node_5.name = "Flip Faces"
+    node_5.location[0] = -80.0
+    node_5.location[1] = -20.0
+    # SETTING VALUES OF NODE: Flip Faces
+    node_5.inputs[1].default_value = True
+
+    # CREATING NODE: Merge by Distance
+    node_6 = group.nodes.new("GeometryNodeMergeByDistance")
+    node_6.name = "Merge by Distance"
+    node_6.location[0] = 280.0
+    node_6.location[1] = -20.0
+    # SETTING VALUES OF NODE: Merge by Distance
+    setattr(node_6, "mode", "ALL")
+    node_6.inputs[1].default_value = True
+    node_6.inputs[2].default_value = 0.0010000000474974513
+
+    # CREATING NODE: Vector
+    node_7 = group.nodes.new("FunctionNodeInputVector")
+    node_7.name = "Vector"
+    node_7.location[0] = -1560.0
+    node_7.location[1] = -200.0
+    # SETTING VALUES OF NODE: Vector
+    setattr(node_7, "vector", [0.0000, 0.0000, 1.0000])
+
+    # CREATING NODE: Math
+    node_8 = group.nodes.new("ShaderNodeMath")
+    node_8.name = "Math"
+    node_8.location[0] = -440.0
+    node_8.location[1] = -180.0
+    # SETTING VALUES OF NODE: Math
+    setattr(node_8, "operation", "MULTIPLY")
+    node_8.inputs[1].default_value = -1.0
+    node_8.inputs[2].default_value = 0.5
+
+    # CREATING NODE: Set Position
+    node_9 = group.nodes.new("GeometryNodeSetPosition")
+    node_9.name = "Set Position"
+    node_9.location[0] = -440.0
+    node_9.location[1] = -20.0
+    # SETTING VALUES OF NODE: Set Position
+    node_9.inputs[1].default_value = True
+    node_9.inputs[2].default_value[0] = 0.0
+    node_9.inputs[2].default_value[1] = 0.0
+    node_9.inputs[2].default_value[2] = 0.0
+
+    # CREATING NODE: Vector Math
+    node_10 = group.nodes.new("ShaderNodeVectorMath")
+    node_10.name = "Vector Math"
+    node_10.location[0] = -620.0
+    node_10.location[1] = -180.0
+    # SETTING VALUES OF NODE: Vector Math
+    setattr(node_10, "operation", "SCALE")
+    node_10.inputs[1].default_value[0] = 0.0
+    node_10.inputs[1].default_value[1] = 0.0
+    node_10.inputs[1].default_value[2] = 0.0
+    node_10.inputs[2].default_value[0] = 0.0
+    node_10.inputs[2].default_value[1] = 0.0
+    node_10.inputs[2].default_value[2] = 0.0
+
+    # CREATING NODE: Normal
+    node_11 = group.nodes.new("GeometryNodeInputNormal")
+    node_11.name = "Normal"
+    node_11.location[0] = -780.0
+    node_11.location[1] = -180.0
+    # SETTING VALUES OF NODE: Normal
+
+    # CREATING NODE: Math.001
+    node_12 = group.nodes.new("ShaderNodeMath")
+    node_12.name = "Math.001"
+    node_12.location[0] = -780.0
+    node_12.location[1] = -260.0
+    # SETTING VALUES OF NODE: Math.001
+    setattr(node_12, "operation", "DIVIDE")
+    node_12.inputs[1].default_value = 2.0
+    node_12.inputs[2].default_value = 0.5
+
+    # CREATING NODE: Math.002
+    node_14 = group.nodes.new("ShaderNodeMath")
+    node_14.name = "Math.002"
+    node_14.location[0] = -820.0
+    node_14.location[1] = -120.0
+    node_14.hide = True
+    # SETTING VALUES OF NODE: Math.002
+    setattr(node_14, "operation", "ADD")
+    node_14.inputs[2].default_value = 0.5
+
+    # CREATING NODE: Extrude Mesh
+    node_15 = group.nodes.new("GeometryNodeExtrudeMesh")
+    node_15.name = "Extrude Mesh"
+    node_15.location[0] = -1000.0
+    node_15.location[1] = -20.0
+    # SETTING VALUES OF NODE: Extrude Mesh
+    setattr(node_15, "mode", "EDGES")
+    node_15.inputs[4].default_value = False
+
+    # CREATING NODE: Math.003
+    node_16 = group.nodes.new("ShaderNodeMath")
+    node_16.name = "Math.003"
+    node_16.location[0] = -1000.0
+    node_16.location[1] = -240.0
+    node_16.hide = True
+    # SETTING VALUES OF NODE: Math.003
+    setattr(node_16, "operation", "MULTIPLY")
+    node_16.inputs[2].default_value = 0.5
+
+    # CREATING NODE: Math.004
+    node_18 = group.nodes.new("ShaderNodeMath")
+    node_18.name = "Math.004"
+    node_18.location[0] = -1380.0
+    node_18.location[1] = -60.0
+    # SETTING VALUES OF NODE: Math.004
+    setattr(node_18, "operation", "DIVIDE")
+    node_18.inputs[0].default_value = 1.0
+    node_18.inputs[2].default_value = 0.5
+
+    # CREATING NODE: Compare
+    node_19 = group.nodes.new("FunctionNodeCompare")
+    node_19.name = "Compare"
+    node_19.location[0] = -1380.0
+    node_19.location[1] = -280.0
+    # SETTING VALUES OF NODE: Compare
+    setattr(node_19, "operation", "EQUAL")
+    setattr(node_19, "data_type", "VECTOR")
+    setattr(node_19, "mode", "ELEMENT")
+    node_19.inputs[0].default_value = 0.0
+    node_19.inputs[1].default_value = 0.0
+    node_19.inputs[2].default_value = 0
+    node_19.inputs[3].default_value = 0
+    node_19.inputs[5].default_value[0] = 0.0
+    node_19.inputs[5].default_value[1] = 0.0
+    node_19.inputs[5].default_value[2] = 0.0
+    node_19.inputs[6].default_value[0] = 0.0
+    node_19.inputs[6].default_value[1] = 0.0
+    node_19.inputs[6].default_value[2] = 0.0
+    node_19.inputs[7].default_value[0] = 0.0
+    node_19.inputs[7].default_value[1] = 0.0
+    node_19.inputs[7].default_value[2] = 0.0
+    node_19.inputs[8].default_value = ""
+    node_19.inputs[9].default_value = ""
+    node_19.inputs[10].default_value = 0.8999999761581421
+    node_19.inputs[11].default_value = 0.08726649731397629
+    node_19.inputs[12].default_value = 0.0010000000474974513
+
+    # CREATING NODE: Normal.001
+    node_20 = group.nodes.new("GeometryNodeInputNormal")
+    node_20.name = "Normal.001"
+    node_20.location[0] = -1200.0
+    node_20.location[1] = -260.0
+    node_20.hide = True
+    # SETTING VALUES OF NODE: Normal.001
+
+    # CREATING NODE: Switch
+    node_21 = group.nodes.new("GeometryNodeSwitch")
+    node_21.name = "Switch"
+    node_21.location[0] = -1200.0
+    node_21.location[1] = -220.0
+    node_21.hide = True
+    # SETTING VALUES OF NODE: Switch
+    node_21.input_type = 'VECTOR'
+
+    # CREATING NODE: Reroute
+    node_22 = group.nodes.new("NodeReroute")
+    node_22.name = "Reroute"
+    node_22.location[0] = -260.0
+    node_22.location[1] = 0.0
+    # SETTING VALUES OF NODE: Reroute
+
+    # CREATING NODE: Reroute.001
+    node_23 = group.nodes.new("NodeReroute")
+    node_23.name = "Reroute.001"
+    node_23.location[0] = 60.0
+    node_23.location[1] = 0.0
+    # SETTING VALUES OF NODE: Reroute.001
+
+    # CREATING GROUP INPUTS AND OUTPUTS
+    group.interface.new_socket(name="Thickness",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Height",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Width",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="U Resolution",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="V Resolution",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Geometry",in_out="OUTPUT",socket_type="NodeSocketGeometry")
+    # CONNECTING, SETTING PARENTS, AND CLEANING INPUTS
+    group.links.new(group.nodes["Merge by Distance"].outputs["Geometry"], node_1.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["U Resolution"], node_2.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Width"], node_2.inputs[1])
+    group.links.new(group.nodes["Set Position"].outputs["Geometry"], node_3.inputs[0])
+    group.links.new(group.nodes["Math"].outputs["Value"], node_3.inputs[3])
+    group.links.new(group.nodes["Reroute.001"].outputs["Output"], node_4.inputs[0])
+    group.links.new(group.nodes["Flip Faces"].outputs["Mesh"], node_4.inputs[0])
+    group.links.new(group.nodes["Extrude Mesh.001"].outputs["Mesh"], node_5.inputs[0])
+    group.links.new(group.nodes["Join Geometry"].outputs["Geometry"], node_6.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Thickness"], node_8.inputs[0])
+    group.links.new(group.nodes["Repeat Output"].outputs["Geometry"], node_9.inputs[0])
+    group.links.new(group.nodes["Vector Math"].outputs["Vector"], node_9.inputs[3])
+    group.links.new(group.nodes["Normal"].outputs["Normal"], node_10.inputs[0])
+    group.links.new(group.nodes["Math.001"].outputs["Value"], node_10.inputs[3])
+    group.links.new(group.nodes["Group Input"].outputs["Thickness"], node_12.inputs[0])
+    group.links.new(group.nodes["Extrude Mesh"].outputs["Mesh"], node_13.inputs[0])
+    group.links.new(group.nodes["Extrude Mesh"].outputs["Top"], node_13.inputs[1])
+    group.links.new(group.nodes["Math.002"].outputs["Value"], node_13.inputs[2])
+    group.links.new(group.nodes["Repeat Input"].outputs["Value"], node_13.inputs[3])
+    group.links.new(group.nodes["Extrude Mesh"].outputs["Side"], node_14.inputs[0])
+    group.links.new(group.nodes["Repeat Input"].outputs["Side"], node_14.inputs[1])
+    group.links.new(group.nodes["Repeat Input"].outputs["Geometry"], node_15.inputs[0])
+    group.links.new(group.nodes["Repeat Input"].outputs["Top"], node_15.inputs[1])
+    group.links.new(group.nodes["Switch"].outputs["Output"], node_15.inputs[2])
+    group.links.new(group.nodes["Math.003"].outputs["Value"], node_15.inputs[3])
+    group.links.new(group.nodes["Math.004"].outputs["Value"], node_16.inputs[0])
+    group.links.new(group.nodes["Repeat Input"].outputs["Value"], node_16.inputs[1])
+    group.links.new(group.nodes["Group Input"].outputs["V Resolution"], node_17.inputs[0])
+    group.links.new(group.nodes["Mesh Circle"].outputs["Mesh"], node_17.inputs[1])
+    group.links.new(group.nodes["Group Input"].outputs["Height"], node_17.inputs[4])
+    group.links.new(group.nodes["Group Input"].outputs["V Resolution"], node_18.inputs[1])
+    group.links.new(group.nodes["Vector"].outputs["Vector"], node_19.inputs[4])
+    group.links.new(group.nodes["Compare"].outputs["Result"], node_21.inputs[0])
+    group.links.new(group.nodes["Vector"].outputs["Vector"], node_21.inputs[1])
+    group.links.new(group.nodes["Normal.001"].outputs["Normal"], node_21.inputs[2])
+    group.links.new(group.nodes["Set Position"].outputs["Geometry"], node_22.inputs[0])
+    group.links.new(group.nodes["Reroute"].outputs["Output"], node_23.inputs[0])
+    # SETTING GROUP INPUT DEFAULTS
+    group.interface.items_tree["Thickness"].default_value = 0.25
+    group.interface.items_tree["Thickness"].hide_value = False
+    group.interface.items_tree["Thickness"].hide_in_modifier = False
+    group.interface.items_tree["Thickness"].force_non_field = True
+    group.interface.items_tree["Thickness"].min_value = -3.4028234663852886e+38
+    group.interface.items_tree["Thickness"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["Height"].default_value = 1.0
+    group.interface.items_tree["Height"].hide_value = False
+    group.interface.items_tree["Height"].hide_in_modifier = False
+    group.interface.items_tree["Height"].force_non_field = True
+    group.interface.items_tree["Height"].min_value = -3.4028234663852886e+38
+    group.interface.items_tree["Height"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["Width"].default_value = 0.5
+    group.interface.items_tree["Width"].hide_value = False
+    group.interface.items_tree["Width"].hide_in_modifier = False
+    group.interface.items_tree["Width"].force_non_field = False
+    group.interface.items_tree["Width"].min_value = 0.0
+    group.interface.items_tree["Width"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["U Resolution"].default_value = 16
+    group.interface.items_tree["U Resolution"].hide_value = False
+    group.interface.items_tree["U Resolution"].hide_in_modifier = False
+    group.interface.items_tree["U Resolution"].force_non_field = False
+    group.interface.items_tree["U Resolution"].min_value = 3
+    group.interface.items_tree["U Resolution"].max_value = 2147483647
+    group.interface.items_tree["V Resolution"].default_value = 1
+    group.interface.items_tree["V Resolution"].hide_value = False
+    group.interface.items_tree["V Resolution"].hide_in_modifier = False
+    group.interface.items_tree["V Resolution"].force_non_field = False
+    group.interface.items_tree["V Resolution"].min_value = 1
+    group.interface.items_tree["V Resolution"].max_value = 2147483647
+
+def gn_mobius():
+    group = bpy.data.node_groups.new("EMC Mobius", "GeometryNodeTree")
+    group.is_modifier = True
+
+    # CREATING NODE: Group Output
+    node_0 = group.nodes.new("NodeGroupOutput")
+    node_0.name = "Group Output"
+    node_0.location[0] = 720.0
+    node_0.location[1] = -60.0
+    # SETTING VALUES OF NODE: Group Output
+
+    # CREATING NODE: Spiral
+    node_1 = group.nodes.new("GeometryNodeCurveSpiral")
+    node_1.name = "Spiral"
+    node_1.location[0] = -180.0
+    node_1.location[1] = 80.0
+    # SETTING VALUES OF NODE: Spiral
+    node_1.inputs[1].default_value = 1.0
+    node_1.inputs[4].default_value = 0.0
+    node_1.inputs[5].default_value = False
+
+    # CREATING NODE: Quadrilateral
+    node_2 = group.nodes.new("GeometryNodeCurvePrimitiveQuadrilateral")
+    node_2.name = "Quadrilateral"
+    node_2.location[0] = 180.0
+    node_2.location[1] = -160.0
+    # SETTING VALUES OF NODE: Quadrilateral
+    setattr(node_2, "mode", "RECTANGLE")
+    node_2.inputs[2].default_value = 4.0
+    node_2.inputs[3].default_value = 2.0
+    node_2.inputs[4].default_value = 1.0
+    node_2.inputs[5].default_value = 3.0
+    node_2.inputs[6].default_value = 1.0
+    node_2.inputs[7].default_value[0] = -1.0
+    node_2.inputs[7].default_value[1] = -1.0
+    node_2.inputs[7].default_value[2] = 0.0
+    node_2.inputs[8].default_value[0] = 1.0
+    node_2.inputs[8].default_value[1] = -1.0
+    node_2.inputs[8].default_value[2] = 0.0
+    node_2.inputs[9].default_value[0] = 1.0
+    node_2.inputs[9].default_value[1] = 1.0
+    node_2.inputs[9].default_value[2] = 0.0
+    node_2.inputs[10].default_value[0] = -1.0
+    node_2.inputs[10].default_value[1] = 1.0
+    node_2.inputs[10].default_value[2] = 0.0
+
+    # CREATING NODE: Curve to Mesh
+    node_3 = group.nodes.new("GeometryNodeCurveToMesh")
+    node_3.name = "Curve to Mesh"
+    node_3.location[0] = 360.0
+    node_3.location[1] = -60.0
+    # SETTING VALUES OF NODE: Curve to Mesh
+    node_3.inputs[2].default_value = False
+
+    # CREATING NODE: Set Curve Tilt
+    node_4 = group.nodes.new("GeometryNodeSetCurveTilt")
+    node_4.name = "Set Curve Tilt"
+    node_4.location[0] = 180.0
+    node_4.location[1] = -20.0
+    # SETTING VALUES OF NODE: Set Curve Tilt
+    node_4.inputs[1].default_value = True
+
+    # CREATING NODE: Spline Parameter
+    node_5 = group.nodes.new("GeometryNodeSplineParameter")
+    node_5.name = "Spline Parameter"
+    node_5.location[0] = 0.0
+    node_5.location[1] = -240.0
+    # SETTING VALUES OF NODE: Spline Parameter
+    try:
+        node_5.outputs["Length"].hide = True
+    except:
+        pass
+    try:
+        node_5.outputs["Index"].hide = True
+    except:
+        pass
+
+    # CREATING NODE: Math
+    node_6 = group.nodes.new("ShaderNodeMath")
+    node_6.name = "Math"
+    node_6.location[0] = 0.0
+    node_6.location[1] = -200.0
+    node_6.hide = True
+    # SETTING VALUES OF NODE: Math
+    setattr(node_6, "operation", "MULTIPLY")
+    node_6.inputs[2].default_value = 0.5
+
+    # CREATING NODE: Math.001
+    node_7 = group.nodes.new("ShaderNodeMath")
+    node_7.name = "Math.001"
+    node_7.location[0] = -180.0
+    node_7.location[1] = -340.0
+    # SETTING VALUES OF NODE: Math.001
+    setattr(node_7, "operation", "RADIANS")
+    node_7.inputs[0].default_value = 180.0
+    node_7.inputs[1].default_value = 0.5
+    node_7.inputs[2].default_value = 0.5
+
+    # CREATING NODE: Vertex Neighbors
+    node_8 = group.nodes.new("GeometryNodeInputMeshVertexNeighbors")
+    node_8.name = "Vertex Neighbors"
+    node_8.location[0] = -360.0
+    node_8.location[1] = -180.0
+    # SETTING VALUES OF NODE: Vertex Neighbors
+    try:
+        node_8.outputs["Face Count"].hide = True
+    except:
+        pass
+
+    # CREATING NODE: Compare
+    node_9 = group.nodes.new("FunctionNodeCompare")
+    node_9.name = "Compare"
+    node_9.location[0] = -180.0
+    node_9.location[1] = -120.0
+    # SETTING VALUES OF NODE: Compare
+    setattr(node_9, "operation", "LESS_THAN")
+    setattr(node_9, "data_type", "INT")
+    setattr(node_9, "mode", "ELEMENT")
+    node_9.inputs[0].default_value = 0.0
+    node_9.inputs[1].default_value = 0.0
+    node_9.inputs[3].default_value = 2
+    node_9.inputs[4].default_value[0] = 0.0
+    node_9.inputs[4].default_value[1] = 0.0
+    node_9.inputs[4].default_value[2] = 0.0
+    node_9.inputs[5].default_value[0] = 0.0
+    node_9.inputs[5].default_value[1] = 0.0
+    node_9.inputs[5].default_value[2] = 0.0
+    node_9.inputs[6].default_value[0] = 0.800000011920929
+    node_9.inputs[6].default_value[1] = 0.800000011920929
+    node_9.inputs[6].default_value[2] = 0.800000011920929
+    node_9.inputs[7].default_value[0] = 0.800000011920929
+    node_9.inputs[7].default_value[1] = 0.800000011920929
+    node_9.inputs[7].default_value[2] = 0.800000011920929
+    node_9.inputs[8].default_value = ""
+    node_9.inputs[9].default_value = ""
+    node_9.inputs[10].default_value = 0.8999999761581421
+    node_9.inputs[11].default_value = 0.08726649731397629
+    node_9.inputs[12].default_value = 0.0010000000474974513
+
+    # CREATING NODE: Capture Attribute
+    node_10 = group.nodes.new("GeometryNodeCaptureAttribute")
+    node_10.name = "Capture Attribute"
+    node_10.location[0] = 0.0
+    node_10.location[1] = -60.0
+    node_10.hide = True
+    # SETTING VALUES OF NODE: Capture Attribute
+    setattr(node_10, "domain", "POINT")
+    node_10.capture_items.new("BOOLEAN", "Result")
+
+    # CREATING NODE: Curve to Mesh.001
+    node_11 = group.nodes.new("GeometryNodeCurveToMesh")
+    node_11.name = "Curve to Mesh.001"
+    node_11.location[0] = 0.0
+    node_11.location[1] = -20.0
+    node_11.hide = True
+    # SETTING VALUES OF NODE: Curve to Mesh.001
+    node_11.inputs[2].default_value = False
+
+    # CREATING NODE: Mesh to Curve
+    node_12 = group.nodes.new("GeometryNodeMeshToCurve")
+    node_12.name = "Mesh to Curve"
+    node_12.location[0] = 0.0
+    node_12.location[1] = -100.0
+    node_12.hide = True
+    # SETTING VALUES OF NODE: Mesh to Curve
+    node_12.inputs[1].default_value = True
+
+    # CREATING NODE: Merge by Distance
+    node_13 = group.nodes.new("GeometryNodeMergeByDistance")
+    node_13.name = "Merge by Distance"
+    node_13.location[0] = 540.0
+    node_13.location[1] = -60.0
+    # SETTING VALUES OF NODE: Merge by Distance
+    setattr(node_13, "mode", "ALL")
+
+    # CREATING NODE: Math.002
+    node_14 = group.nodes.new("ShaderNodeMath")
+    node_14.name = "Math.002"
+    node_14.location[0] = -180.0
+    node_14.location[1] = -300.0
+    node_14.hide = True
+    # SETTING VALUES OF NODE: Math.002
+    setattr(node_14, "operation", "MULTIPLY")
+    node_14.inputs[2].default_value = 0.5
+
+    # CREATING NODE: Group Input
+    node_15 = group.nodes.new("NodeGroupInput")
+    node_15.name = "Group Input"
+    node_15.location[0] = -380.0
+    node_15.location[1] = -360.0
+    # SETTING VALUES OF NODE: Group Input
+
+    # CREATING NODE: Math.003
+    node_16 = group.nodes.new("ShaderNodeMath")
+    node_16.name = "Math.003"
+    node_16.location[0] = 0.0
+    node_16.location[1] = -160.0
+    node_16.hide = True
+    # SETTING VALUES OF NODE: Math.003
+    setattr(node_16, "operation", "ADD")
+    node_16.inputs[2].default_value = 0.5
+
+    # CREATING GROUP INPUTS AND OUTPUTS
+    group.interface.new_socket(name="Geometry",in_out="OUTPUT",socket_type="NodeSocketGeometry")
+    group.interface.new_socket(name="Twist",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Roll",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Width",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Height",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Radius",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Resolution",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Distance",in_out="INPUT",socket_type="NodeSocketFloat")
+    # CONNECTING, SETTING PARENTS, AND CLEANING INPUTS
+    group.links.new(group.nodes["Merge by Distance"].outputs["Geometry"], node_0.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Resolution"], node_1.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Radius"], node_1.inputs[2])
+    group.links.new(group.nodes["Group Input"].outputs["Radius"], node_1.inputs[3])
+    group.links.new(group.nodes["Group Input"].outputs["Width"], node_2.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Height"], node_2.inputs[1])
+    group.links.new(group.nodes["Set Curve Tilt"].outputs["Curve"], node_3.inputs[0])
+    group.links.new(group.nodes["Quadrilateral"].outputs["Curve"], node_3.inputs[1])
+    group.links.new(group.nodes["Mesh to Curve"].outputs["Curve"], node_4.inputs[0])
+    group.links.new(group.nodes["Math.003"].outputs["Value"], node_4.inputs[2])
+    group.links.new(group.nodes["Spline Parameter"].outputs["Factor"], node_6.inputs[0])
+    group.links.new(group.nodes["Math.002"].outputs["Value"], node_6.inputs[1])
+    group.links.new(group.nodes["Vertex Neighbors"].outputs["Vertex Count"], node_9.inputs[2])
+    group.links.new(group.nodes["Curve to Mesh.001"].outputs["Mesh"], node_10.inputs[0])
+    group.links.new(group.nodes["Compare"].outputs["Result"], node_10.inputs[1])
+    group.links.new(group.nodes["Spiral"].outputs["Curve"], node_11.inputs[0])
+    group.links.new(group.nodes["Capture Attribute"].outputs["Geometry"], node_12.inputs[0])
+    group.links.new(group.nodes["Curve to Mesh"].outputs["Mesh"], node_13.inputs[0])
+    group.links.new(group.nodes["Capture Attribute"].outputs["Result"], node_13.inputs[1])
+    group.links.new(group.nodes["Group Input"].outputs["Distance"], node_13.inputs[2])
+    group.links.new(group.nodes["Math.001"].outputs["Value"], node_14.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Twist"], node_14.inputs[1])
+    group.links.new(group.nodes["Math"].outputs["Value"], node_16.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Roll"], node_16.inputs[1])
+    # SETTING GROUP INPUT DEFAULTS
+    group.interface.items_tree["Twist"].default_value = 1
+    group.interface.items_tree["Twist"].hide_value = False
+    group.interface.items_tree["Twist"].hide_in_modifier = False
+    group.interface.items_tree["Twist"].force_non_field = True
+    group.interface.items_tree["Twist"].min_value = 1
+    group.interface.items_tree["Twist"].max_value = 2147483647
+    group.interface.items_tree["Roll"].default_value = 0.0
+    group.interface.items_tree["Roll"].hide_value = False
+    group.interface.items_tree["Roll"].hide_in_modifier = False
+    group.interface.items_tree["Roll"].force_non_field = True
+    group.interface.items_tree["Roll"].min_value = -10000.0
+    group.interface.items_tree["Roll"].max_value = 10000.0
+    group.interface.items_tree["Width"].subtype = "DISTANCE"
+    group.interface.items_tree["Width"].default_value = 0.5
+    group.interface.items_tree["Width"].hide_value = False
+    group.interface.items_tree["Width"].hide_in_modifier = False
+    group.interface.items_tree["Width"].force_non_field = False
+    group.interface.items_tree["Width"].min_value = 0.0
+    group.interface.items_tree["Width"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["Height"].subtype = "DISTANCE"
+    group.interface.items_tree["Height"].default_value = 0.20000000298023224
+    group.interface.items_tree["Height"].hide_value = False
+    group.interface.items_tree["Height"].hide_in_modifier = False
+    group.interface.items_tree["Height"].force_non_field = False
+    group.interface.items_tree["Height"].min_value = 0.0
+    group.interface.items_tree["Height"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["Radius"].subtype = "DISTANCE"
+    group.interface.items_tree["Radius"].default_value = 1.0
+    group.interface.items_tree["Radius"].hide_value = False
+    group.interface.items_tree["Radius"].hide_in_modifier = False
+    group.interface.items_tree["Radius"].force_non_field = False
+    group.interface.items_tree["Radius"].min_value = -3.4028234663852886e+38
+    group.interface.items_tree["Radius"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["Resolution"].default_value = 64
+    group.interface.items_tree["Resolution"].hide_value = False
+    group.interface.items_tree["Resolution"].hide_in_modifier = False
+    group.interface.items_tree["Resolution"].force_non_field = False
+    group.interface.items_tree["Resolution"].min_value = 1
+    group.interface.items_tree["Resolution"].max_value = 1024
+    group.interface.items_tree["Distance"].subtype = "DISTANCE"
+    group.interface.items_tree["Distance"].default_value = 0.15000000596046448
+    group.interface.items_tree["Distance"].hide_value = False
+    group.interface.items_tree["Distance"].hide_in_modifier = False
+    group.interface.items_tree["Distance"].force_non_field = False
+    group.interface.items_tree["Distance"].min_value = 0.0
+    group.interface.items_tree["Distance"].max_value = 3.4028234663852886e+38
+
+def gn_helix():
+    group = bpy.data.node_groups.new("EMC Helix", "GeometryNodeTree")
+    group.is_modifier = True
+
+    # CREATING NODE: Group Output
+    node_0 = group.nodes.new("NodeGroupOutput")
+    node_0.name = "Group Output"
+    node_0.location[0] = 460.0
+    node_0.location[1] = -160.0
+    # SETTING VALUES OF NODE: Group Output
+
+    # CREATING NODE: Spiral
+    node_1 = group.nodes.new("GeometryNodeCurveSpiral")
+    node_1.name = "Spiral"
+    node_1.location[0] = 100.0
+    node_1.location[1] = -80.0
+    # SETTING VALUES OF NODE: Spiral
+
+    # CREATING NODE: Curve to Mesh
+    node_2 = group.nodes.new("GeometryNodeCurveToMesh")
+    node_2.name = "Curve to Mesh"
+    node_2.location[0] = 280.0
+    node_2.location[1] = -160.0
+    # SETTING VALUES OF NODE: Curve to Mesh
+    node_2.inputs[2].default_value = False
+
+    # CREATING NODE: Curve Circle
+    node_3 = group.nodes.new("GeometryNodeCurvePrimitiveCircle")
+    node_3.name = "Curve Circle"
+    node_3.location[0] = 100.0
+    node_3.location[1] = -280.0
+    # SETTING VALUES OF NODE: Curve Circle
+    setattr(node_3, "mode", "RADIUS")
+    node_3.inputs[1].default_value[0] = -1.0
+    node_3.inputs[1].default_value[1] = 0.0
+    node_3.inputs[1].default_value[2] = 0.0
+    node_3.inputs[2].default_value[0] = 0.0
+    node_3.inputs[2].default_value[1] = 1.0
+    node_3.inputs[2].default_value[2] = 0.0
+    node_3.inputs[3].default_value[0] = 1.0
+    node_3.inputs[3].default_value[1] = 0.0
+    node_3.inputs[3].default_value[2] = 0.0
+
+    # CREATING NODE: Group Input
+    node_4 = group.nodes.new("NodeGroupInput")
+    node_4.name = "Group Input"
+    node_4.location[0] = -260.0
+    node_4.location[1] = -160.0
+    # SETTING VALUES OF NODE: Group Input
+
+    # CREATING NODE: Math
+    node_5 = group.nodes.new("ShaderNodeMath")
+    node_5.name = "Math"
+    node_5.location[0] = -80.0
+    node_5.location[1] = -200.0
+    node_5.hide = True
+    # SETTING VALUES OF NODE: Math
+    setattr(node_5, "operation", "MULTIPLY")
+    node_5.inputs[2].default_value = 0.5
+
+    # CREATING GROUP INPUTS AND OUTPUTS
+    group.interface.new_socket(name="Geometry",in_out="OUTPUT",socket_type="NodeSocketGeometry")
+    group.interface.new_socket(name="Height",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Wifth",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="V Resolution",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="U Resolution",in_out="INPUT",socket_type="NodeSocketInt")
+    group.interface.new_socket(name="Radius",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Springiness",in_out="INPUT",socket_type="NodeSocketFloat")
+    group.interface.new_socket(name="Reverse",in_out="INPUT",socket_type="NodeSocketBool")
+    # CONNECTING, SETTING PARENTS, AND CLEANING INPUTS
+    group.links.new(group.nodes["Curve to Mesh"].outputs["Mesh"], node_0.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["V Resolution"], node_1.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Height"], node_1.inputs[1])
+    group.links.new(group.nodes["Group Input"].outputs["Wifth"], node_1.inputs[2])
+    group.links.new(group.nodes["Group Input"].outputs["Wifth"], node_1.inputs[3])
+    group.links.new(group.nodes["Math"].outputs["Value"], node_1.inputs[4])
+    group.links.new(group.nodes["Group Input"].outputs["Reverse"], node_1.inputs[5])
+    group.links.new(group.nodes["Spiral"].outputs["Curve"], node_2.inputs[0])
+    group.links.new(group.nodes["Curve Circle"].outputs["Curve"], node_2.inputs[1])
+    group.links.new(group.nodes["Group Input"].outputs["U Resolution"], node_3.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Radius"], node_3.inputs[4])
+    group.links.new(group.nodes["Group Input"].outputs["Height"], node_5.inputs[0])
+    group.links.new(group.nodes["Group Input"].outputs["Springiness"], node_5.inputs[1])
+    # SETTING GROUP INPUT DEFAULTS
+    group.interface.items_tree["Height"].default_value = 4.0
+    group.interface.items_tree["Height"].hide_value = False
+    group.interface.items_tree["Height"].hide_in_modifier = False
+    group.interface.items_tree["Height"].force_non_field = False
+    group.interface.items_tree["Height"].min_value = -3.4028234663852886e+38
+    group.interface.items_tree["Height"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["Wifth"].default_value = 1.0
+    group.interface.items_tree["Wifth"].hide_value = False
+    group.interface.items_tree["Wifth"].hide_in_modifier = False
+    group.interface.items_tree["Wifth"].force_non_field = False
+    group.interface.items_tree["Wifth"].min_value = -3.4028234663852886e+38
+    group.interface.items_tree["Wifth"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["V Resolution"].default_value = 16
+    group.interface.items_tree["V Resolution"].hide_value = False
+    group.interface.items_tree["V Resolution"].hide_in_modifier = False
+    group.interface.items_tree["V Resolution"].force_non_field = False
+    group.interface.items_tree["V Resolution"].min_value = 1
+    group.interface.items_tree["V Resolution"].max_value = 1024
+    group.interface.items_tree["U Resolution"].default_value = 16
+    group.interface.items_tree["U Resolution"].hide_value = False
+    group.interface.items_tree["U Resolution"].hide_in_modifier = False
+    group.interface.items_tree["U Resolution"].force_non_field = False
+    group.interface.items_tree["U Resolution"].min_value = 3
+    group.interface.items_tree["U Resolution"].max_value = 512
+    group.interface.items_tree["Radius"].subtype = "DISTANCE"
+    group.interface.items_tree["Radius"].default_value = 0.25
+    group.interface.items_tree["Radius"].hide_value = False
+    group.interface.items_tree["Radius"].hide_in_modifier = False
+    group.interface.items_tree["Radius"].force_non_field = False
+    group.interface.items_tree["Radius"].min_value = 0.0
+    group.interface.items_tree["Radius"].max_value = 3.4028234663852886e+38
+    group.interface.items_tree["Springiness"].default_value = 1.0
+    group.interface.items_tree["Springiness"].hide_value = False
+    group.interface.items_tree["Springiness"].hide_in_modifier = False
+    group.interface.items_tree["Springiness"].force_non_field = False
+    group.interface.items_tree["Springiness"].min_value = -10000.0
+    group.interface.items_tree["Springiness"].max_value = 10000.0
+    group.interface.items_tree["Reverse"].default_value = True
+    group.interface.items_tree["Reverse"].hide_value = False
+    group.interface.items_tree["Reverse"].hide_in_modifier = False
+    group.interface.items_tree["Reverse"].force_non_field = False
+
+def primitives_check():
+    return bpy.context.preferences.addons[__name__].preferences.gn_primitives and int_version >= 420
+
 #-------------------------------------------------------------------
 #Blender required stuff
 
@@ -271,6 +2507,7 @@ class PreferencesNotes(bpy.types.AddonPreferences):
     polyquilt: bpy.props.BoolProperty(name = 'PolyQuilt')
     maxivs: bpy.props.BoolProperty(name = 'Maxivz Tools')
     uv_unwrap: bpy.props.BoolProperty(name = 'UV Unwrapping function. True = UV Window | False = UV Menu')
+    gn_primitives: bpy.props.BoolProperty(name = 'Generate Geometry Nodes based primitives instead of Modifiers', default = True)
     apply: bpy.props.BoolProperty(name = 'Apply modifiers of generated primitives by default')
 
     def draw(self, context):
@@ -280,6 +2517,9 @@ class PreferencesNotes(bpy.types.AddonPreferences):
 
         if int_version > 283:
             layout.prop(self, "uv_unwrap")
+
+        if int_version > 240:
+            layout.prop(self, "gn_primitives")
 
         
 
@@ -311,7 +2551,6 @@ class Nothing(bpy.types.Operator):
     def execute(self, context):
         self.report({"ERROR"}, "Action(s) Unavailable")
         return{'FINISHED'}
-
 
 #-------------------------------------------------------------------
 #Pie Menus e
@@ -548,18 +2787,30 @@ class VIEW3D_MT_Context(Menu):
             # ADD MENU
             extra_objects = 'add_mesh_extra_objects' if int_version < 420 else "bl_ext.blender_org.extra_mesh_objects"
 
-            pie.operator("emc.cylinder", icon='MESH_CYLINDER')
-            pie.operator("emc.sphere", icon='MESH_UVSPHERE')
-            pie.operator("emc.cube", icon='MESH_CUBE')
+            if primitives_check():
+                pie.operator("emc.gn_primitive", text='Add Cylinder', icon='MESH_CYLINDER').primitive="cylinder"
+                pie.operator("emc.gn_primitive", text='Add Sphere', icon='MESH_UVSPHERE').primitive="sphere"
+                pie.operator("emc.gn_primitive", text='Add Cube', icon='MESH_CUBE').primitive="cube"
+            else:
+                pie.operator("emc.cylinder", icon='MESH_CYLINDER')
+                pie.operator("emc.sphere", icon='MESH_UVSPHERE')
+                pie.operator("emc.cube", icon='MESH_CUBE')
 
             if extra_objects in bpy.context.preferences.addons.keys():
                 pie.operator("mesh.primitive_emptyvert_add", icon='DECORATE')
             else:
                 pie.operator("emc.null", text='Extra Objects addon not enabled', icon='ERROR')  
-            pie.operator("emc.plane", icon='MESH_PLANE')
-            pie.operator("emc.circle", icon='MESH_CIRCLE')
-            pie.operator("emc.cone", icon='MESH_CONE')
-            pie.operator("emc.torus", icon='MESH_TORUS')
+            
+            if primitives_check():
+                pie.operator("emc.gn_primitive", text='Add Plane', icon='MESH_PLANE').primitive="plane"
+                pie.operator("emc.gn_primitive", text='Add Circle', icon='MESH_CIRCLE').primitive="circle"
+                pie.operator("emc.gn_primitive", text='Add Cone', icon='MESH_CONE').primitive="cone"
+                pie.operator("emc.gn_primitive", text='Add Torus', icon='MESH_TORUS').primitive="torus"
+            else:
+                pie.operator("emc.plane", icon='MESH_PLANE')
+                pie.operator("emc.circle", icon='MESH_CIRCLE')
+                pie.operator("emc.cone", icon='MESH_CONE')
+                pie.operator("emc.torus", icon='MESH_TORUS')
 
             pie.separator()
             pie.separator()
@@ -572,16 +2823,26 @@ class VIEW3D_MT_Context(Menu):
             if extra_objects in bpy.context.preferences.addons.keys():
                 other_menu.operator("mesh.primitive_solid_add", icon = "SEQ_CHROMA_SCOPE")
             else:
-                other_menu.operator("emc.null", text='Extra Objects addon not enabled', icon='ERROR')                  
+                other_menu.operator("emc.null", text='Extra Objects addon not enabled', icon='ERROR')    
+
             other_menu.operator("emc.prism", icon='OUTLINER_OB_MESH')
-            other_menu.operator("emc.pipe", icon='META_CAPSULE')
-            other_menu.operator("emc.helix", icon='MOD_SCREW')
+            if primitives_check():
+                other_menu.operator("emc.gn_primitive", text='Pipe', icon='META_CAPSULE').primitive="pipe"
+                other_menu.operator("emc.gn_primitive", text='Helix', icon='MOD_SCREW').primitive="helix"
+            else:
+                other_menu.operator("emc.pipe", icon='META_CAPSULE')
+                other_menu.operator("emc.helix", icon='MOD_SCREW')
+
             if extra_objects in bpy.context.preferences.addons.keys():
                 other_menu.operator('wm.call_menu_pie', text='Gears', icon='SETTINGS').name="EMC_MT_Gears"
             else:
                 other_menu.operator("emc.null", text='Extra Objects addon not enabled', icon='ERROR')  
-            other_menu.operator("mesh.primitive_ico_sphere_add", icon = "MESH_ICOSPHERE") 
-            other_menu.operator("emc.mobius", icon = "HAND") 
+            other_menu.operator("mesh.primitive_ico_sphere_add", icon = "MESH_ICOSPHERE")
+
+            if primitives_check():
+                other_menu.operator("emc.gn_primitive", text='Mobius Strip', icon='HAND').primitive="mobius"
+            else:
+                other_menu.operator("emc.mobius", icon = "HAND")
 
             other_menu.separator()
 
@@ -792,8 +3053,9 @@ class VIEW3D_MT_EditContext(Menu):
             other_menu.separator()
 
             other_menu.operator("emc.mirror", depress="EMC Mirror" in bpy.context.object.modifiers, icon = "MOD_MIRROR").existing = True
-            other_menu.operator("mesh.separate", icon = "MOD_EDGESPLIT")
             other_menu.operator("emc.weld", icon='TRANSFORM_ORIGINS')
+        other_menu.operator("mesh.separate", icon = "MOD_EDGESPLIT")
+            
 
 class VIEW3D_MT_uvMenu(Menu):
     bl_label = "EMC Select UV"
@@ -1377,7 +3639,11 @@ class PolyDraw(bpy.types.Operator):
         bpy.context.scene.tool_settings.snap_elements = {'FACE'}
         bpy.context.scene.tool_settings.use_snap_backface_culling = True
         bpy.context.scene.tool_settings.use_snap_self = True
-        bpy.context.scene.tool_settings.use_snap_project = True
+        if int_version < 420:
+            bpy.context.scene.tool_settings.use_snap_project = True
+        else:
+            bpy.context.scene.tool_settings.snap_elements_individual = {'FACE_PROJECT'}
+            bpy.context.space_data.overlay.show_retopology = True
         bpy.context.object.show_in_front = True
         bpy.context.space_data.shading.color_type = 'OBJECT'
         bpy.context.object.color = (0.270008, 1, 0.47917, 1 )
@@ -1606,8 +3872,22 @@ class MarkSharp(bpy.types.Operator):
         default = False,
     )
 
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "angle")
+        if int_version < 420:
+            layout.prop(self, "smooth")
+        layout.prop(self, "seams")
+
     def execute(self, context):
-        og_angle = bpy.context.object.data.auto_smooth_angle
+        if int_version >= 420:
+            try:
+                og_angle = bpy.context.object.modifiers["Smooth by Angle"]["Input_1"]
+            except:
+                pass
+        else:
+            og_angle = bpy.context.object.data.auto_smooth_angle
+
         bpy.ops.object.vertex_group_add()
         bpy.context.scene.tool_settings.vertex_group_weight = 1
         bpy.ops.object.vertex_group_assign()
@@ -1629,9 +3909,9 @@ class MarkSharp(bpy.types.Operator):
         bpy.ops.object.vertex_group_select()
         bpy.ops.object.vertex_group_remove(all=False, all_unlocked=False)
 
-        bpy.context.object.data.auto_smooth_angle = math.pi if self.smooth == True else og_angle
-            
-        bpy.context.object.data.use_auto_smooth = self.smooth
+        if int_version < 420:
+            bpy.context.object.data.auto_smooth_angle = math.pi if self.smooth == True else og_angle            
+            bpy.context.object.data.use_auto_smooth = self.smooth
 
         # bpy.ops.object.mode_set(mode='OBJECT')
         # bpy.ops.object.shade_smooth()
@@ -1754,9 +4034,11 @@ class Flat(bpy.types.Operator):
             bpy.ops.object.shade_flat()
 
             objs = bpy.context.selected_objects
-            for e in objs:
-                if e.type == 'MESH':
-                    e.data.use_auto_smooth = False
+            
+            if int_version < 410:
+                for e in objs:
+                    if e.type == 'MESH':
+                        e.data.use_auto_smooth = False
         return{'FINISHED'}      
 
 class EmcUV(bpy.types.Operator):
@@ -2031,7 +4313,7 @@ class EmcMirror(bpy.types.Operator):
         if self.existing:
             id_name = name
         else:
-            id_name = bpy.context.object.modifiers[-1].name
+            id_name = bpy.context.object.modifiers[bottom_mod()].name
         bpy.context.object.modifiers[len(bpy.context.object.modifiers)-1].name = id_name
         bpy.context.object.modifiers[id_name].use_bisect_axis[0] = True
         bpy.context.object.modifiers[id_name].use_bisect_axis[1] = True
@@ -2055,7 +4337,7 @@ class EmcMirror(bpy.types.Operator):
             if self.existing:
                 bpy.context.object.modifiers[name].mirror_object = objs[0]
             else:
-                bpy.context.object.modifiers[-1].mirror_object = objs[0]
+                bpy.context.object.modifiers[bottom_mod()].mirror_object = objs[0]
             self.report({"INFO"}, "Selected object was set as origin")
         elif len(bpy.context.selected_objects) > 2:
             self.report({"WARNING"}, "Must Select 1 or 2 objects, depending on the intended usecase")
@@ -2566,6 +4848,8 @@ class Reset(bpy.types.Operator):
         bpy.context.scene.tool_settings.proportional_edit_falloff = 'SMOOTH'
         bpy.context.scene.tool_settings.use_proportional_projected = False
         bpy.context.scene.tool_settings.use_proportional_connected = False
+        if int_version >= 420:
+            bpy.context.space_data.overlay.show_retopology = False
         return{'FINISHED'}
 
 class FaceMapsMaterial(bpy.types.Operator):
@@ -2719,8 +5003,8 @@ class EMCbool(bpy.types.Operator):
             bpy.ops.object.select_all(action='DESELECT')
             set_obj_selection(active)
             bpy.ops.object.modifier_add(type='BOOLEAN')
-            bpy.context.object.modifiers[-1].operand_type = 'COLLECTION'
-            bpy.context.object.modifiers[-1].show_expanded = False
+            bpy.context.object.modifiers[bottom_mod()].operand_type = 'COLLECTION'
+            bpy.context.object.modifiers[bottom_mod()].show_expanded = False
 
             try:
                 og_exclude = bpy.context.view_layer.layer_collection.children["EMC Extras"].exclude
@@ -2765,7 +5049,7 @@ class EMCbool(bpy.types.Operator):
                 i.parent = active
                 i.matrix_parent_inverse = active.matrix_world.inverted()
 
-            bpy.context.object.modifiers[-1].collection = bpy.data.collections[colnameget]
+            bpy.context.object.modifiers[bottom_mod()].collection = bpy.data.collections[colnameget]
 
             try:
                 bpy.context.view_layer.layer_collection.children["EMC Extras"].exclude = og_exclude
@@ -2775,13 +5059,13 @@ class EMCbool(bpy.types.Operator):
                 pass
 
             if self.operation == "diff":
-                bpy.context.object.modifiers[-1].operation = 'DIFFERENCE'
+                bpy.context.object.modifiers[bottom_mod()].operation = 'DIFFERENCE'
                 bpy.data.collections[colnameget].color_tag = 'COLOR_01'
             elif self.operation == "uni":
-                bpy.context.object.modifiers[-1].operation = 'UNION'
+                bpy.context.object.modifiers[bottom_mod()].operation = 'UNION'
                 bpy.data.collections[colnameget].color_tag = 'COLOR_04'
             else:
-                bpy.context.object.modifiers[-1].operation = 'INTERSECT'
+                bpy.context.object.modifiers[bottom_mod()].operation = 'INTERSECT'
                 bpy.data.collections[colnameget].color_tag = 'COLOR_05'
 
             if check_col_viz:
@@ -2795,8 +5079,8 @@ class EMCbool(bpy.types.Operator):
                 bpy.ops.object.select_all(action='DESELECT')
                 set_obj_selection(active)
                 bpy.ops.object.modifier_add(type='BOOLEAN')
-                bpy.context.object.modifiers[-1].show_expanded = False
-                bpy.context.object.modifiers[-1].object = i
+                bpy.context.object.modifiers[bottom_mod()].show_expanded = False
+                bpy.context.object.modifiers[bottom_mod()].object = i
                 i.display_type = 'BOUNDS'
                 i.parent = active
                 i.matrix_parent_inverse = active.matrix_world.inverted()
@@ -2806,15 +5090,15 @@ class EMCbool(bpy.types.Operator):
                     pass
 
                 if self.operation == "diff":
-                    bpy.context.object.modifiers[-1].operation = 'DIFFERENCE'
+                    bpy.context.object.modifiers[bottom_mod()].operation = 'DIFFERENCE'
                 elif self.operation == "uni":
-                    bpy.context.object.modifiers[-1].operation = 'UNION'
+                    bpy.context.object.modifiers[bottom_mod()].operation = 'UNION'
                 elif self.operation == "inter":
-                    bpy.context.object.modifiers[-1].operation = 'INTERSECT'
+                    bpy.context.object.modifiers[bottom_mod()].operation = 'INTERSECT'
                 else:
-                    bpy.context.object.modifiers[-1].operation = 'DIFFERENCE'
+                    bpy.context.object.modifiers[bottom_mod()].operation = 'DIFFERENCE'
                     bpy.ops.object.duplicate_move_linked()
-                    bpy.context.object.modifiers[-1].operation = 'INTERSECT'
+                    bpy.context.object.modifiers[bottom_mod()].operation = 'INTERSECT'
                     
                     bpy.context.active_object.parent = active
                     bpy.ops.object.location_clear(clear_delta=False)
@@ -2832,18 +5116,18 @@ class EMCbool(bpy.types.Operator):
 
                     if self.apply:
                         if int_version > 283:
-                            bpy.ops.object.modifier_apply(modifier=bpy.context.object.modifiers[-1].name)
+                            bpy.ops.object.modifier_apply(modifier=bpy.context.object.modifiers[bottom_mod()].name)
                         else:
-                            bpy.ops.object.modifier_apply(apply_as='DATA', modifier=bpy.context.object.modifiers[-1].name)
+                            bpy.ops.object.modifier_apply(apply_as='DATA', modifier=bpy.context.object.modifiers[bottom_mod()].name)
                 
                 set_obj_selection(active, i)
                 move_to_col(i, "EMC Extras", True, True)
 
         if self.apply:
             if int_version > 283:
-                bpy.ops.object.modifier_apply(modifier=bpy.context.object.modifiers[-1].name)
+                bpy.ops.object.modifier_apply(modifier=bpy.context.object.modifiers[bottom_mod()].name)
             else:
-                bpy.ops.object.modifier_apply(apply_as='DATA', modifier=bpy.context.object.modifiers[-1].name)
+                bpy.ops.object.modifier_apply(apply_as='DATA', modifier=bpy.context.object.modifiers[bottom_mod()].name)
         return{'FINISHED'}
 
 class addCylinder(bpy.types.Operator):
@@ -4179,11 +6463,11 @@ class EmcBevelModal(bpy.types.Operator):
                         bpy.context.object.vertex_groups[-1].name = 'EMC_Bevel'
                         bpy.ops.object.mode_set(mode='OBJECT')
                         bpy.ops.object.modifier_add(type='BEVEL')
-                        bpy.context.object.modifiers[-1].harden_normals = True
-                        bpy.context.object.modifiers[-1].miter_outer = 'MITER_ARC'
-                        bpy.context.object.modifiers[-1].vertex_group = bpy.context.object.vertex_groups[-1].name
-                        bpy.context.object.modifiers[-1].limit_method = 'VGROUP'
-                        bpy.context.object.modifiers[-1].name = "VG_" + bpy.context.object.vertex_groups[-1].name
+                        bpy.context.object.modifiers[bottom_mod()].harden_normals = True
+                        bpy.context.object.modifiers[bottom_mod()].miter_outer = 'MITER_ARC'
+                        bpy.context.object.modifiers[bottom_mod()].vertex_group = bpy.context.object.vertex_groups[-1].name
+                        bpy.context.object.modifiers[bottom_mod()].limit_method = 'VGROUP'
+                        bpy.context.object.modifiers[bottom_mod()].name = "VG_" + bpy.context.object.vertex_groups[-1].name
                         self.mod_loc = -1
                     else:
                         self.mod_loc = self.og_mod_loc
@@ -4192,7 +6476,7 @@ class EmcBevelModal(bpy.types.Operator):
                         bpy.context.object.vertex_groups.active_index = -1
                         bpy.ops.object.vertex_group_select()
                         bpy.ops.object.mode_set(mode='OBJECT')
-                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[bottom_mod()].name)
                         bpy.context.active_object.vertex_groups.remove(bpy.context.active_object.vertex_groups[-1])
 
         elif event.type in {'MIDDLEMOUSE'}:
@@ -4225,14 +6509,14 @@ class EmcBevelModal(bpy.types.Operator):
                     if self.og_vg_num != len(bpy.context.active_object.vertex_groups):
                         bpy.context.active_object.vertex_groups.remove(bpy.context.active_object.vertex_groups[-1])
                     if self.og_mods_num != len(bpy.context.object.modifiers):
-                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[bottom_mod()].name)
                 else:
                     bpy.ops.object.mode_set(mode='EDIT')
                     bpy.ops.ed.undo()
                     if self.og_mods_num != len(bpy.context.object.modifiers):
-                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[bottom_mod()].name)
             else:
-                bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+                bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[bottom_mod()].name)
             context.area.header_text_set(None)
             bpy.types.WorkSpace.status_text_set_internal(None)
             bpy.context.object.show_wire = self.wires
@@ -4258,7 +6542,6 @@ class EmcBevelModal(bpy.types.Operator):
         self.og_mods_num = len(bpy.context.object.modifiers)
         self.og_vg_num = len(bpy.context.active_object.vertex_groups)
         self.vert_select = True if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False) else False
-        self.mod_loc = -1
         self.mods_with_bevel = 0
         mod_temp_loc = 0
         self.mod_name = "NONE"
@@ -4271,12 +6554,13 @@ class EmcBevelModal(bpy.types.Operator):
             pass
         bpy.context.object.show_wire = True
 
+        bpy.ops.object.modifier_add(type='BEVEL')
+        self.mod_loc = bottom_mod(True)
         if bpy.context.object.mode == 'EDIT':
             bm = bmesh.from_edit_mesh(bpy.context.edit_object.data)
             selected_verts = [vertex for vertex in bm.verts if vertex.select]
-            bpy.ops.object.modifier_add(type='BEVEL')
-            bpy.context.object.modifiers[-1].harden_normals = True
-            bpy.context.object.modifiers[-1].miter_outer = 'MITER_ARC'
+            bpy.context.object.modifiers[bottom_mod()].harden_normals = True
+            bpy.context.object.modifiers[bottom_mod()].miter_outer = 'MITER_ARC'
             if len(selected_verts) > 0:
                 if self.vert_select:
                     belongs_to = ""
@@ -4298,7 +6582,7 @@ class EmcBevelModal(bpy.types.Operator):
                         bpy.context.object.vertex_groups[-1].name = 'EMC_BEVEL_OG_TEMP'
                         print("named")
 
-                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[bottom_mod()].name)
                         bpy.context.object.vertex_groups.active_index = bpy.context.object.vertex_groups[belongs_to].index
                         bpy.ops.object.vertex_group_select()
                         
@@ -4322,8 +6606,8 @@ class EmcBevelModal(bpy.types.Operator):
                         bpy.ops.object.vertex_group_assign()
                         bpy.context.object.vertex_groups[-1].name = 'EMC_Bevel'
                         self.mod_name = "VG"
-                        bpy.context.object.modifiers[-1].vertex_group = bpy.context.object.vertex_groups[self.mod_loc].name
-                        bpy.context.object.modifiers[-1].limit_method = 'VGROUP'
+                        bpy.context.object.modifiers[bottom_mod()].vertex_group = bpy.context.object.vertex_groups[self.mod_loc].name
+                        bpy.context.object.modifiers[bottom_mod()].limit_method = 'VGROUP'
                 else:
                     for modifier in bpy.context.object.modifiers:
                         mod_temp_loc += 1
@@ -4333,13 +6617,12 @@ class EmcBevelModal(bpy.types.Operator):
                                 self.mod_loc = mod_temp_loc - len(bpy.context.object.modifiers)
                     print(self.mod_loc)
                     bpy.ops.transform.edge_bevelweight(value=1)
-                    bpy.context.object.modifiers[-1].limit_method = 'WEIGHT'
+                    bpy.context.object.modifiers[bottom_mod()].limit_method = 'WEIGHT'
                     if self.mods_with_bevel > 0:
-                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[bottom_mod()].name)
                 bpy.ops.object.mode_set(mode='OBJECT')
                 self.edit = True
         elif bpy.context.object.mode == 'OBJECT':
-            bpy.ops.object.modifier_add(type='BEVEL')
             bpy.context.object.modifiers[self.mod_loc].harden_normals = True
             bpy.context.object.modifiers[self.mod_loc].miter_outer = 'MITER_ARC'
             bpy.context.object.modifiers[self.mod_loc].limit_method = 'ANGLE'
@@ -4384,6 +6667,7 @@ class EmcArrayModal(bpy.types.Operator):
     axis_num: bpy.props.IntProperty()
     axis_name: bpy.props.StringProperty()
     mod_index: bpy.props.IntProperty()
+    curve_mod_index: bpy.props.IntProperty()
     curve: bpy.props.StringProperty()
     add_deform: bpy.props.BoolProperty()
     add_circle: bpy.props.BoolProperty()
@@ -4429,7 +6713,7 @@ class EmcArrayModal(bpy.types.Operator):
                         
                             bpy.context.object.modifiers[self.mod_index].fit_type = 'FIT_CURVE'
                             bpy.context.object.modifiers[self.mod_index].curve = bpy.data.objects[self.curve]
-                            bpy.context.object.modifiers[-1].object = bpy.data.objects[self.curve]
+                            bpy.context.object.modifiers[bottom_mod()].object = bpy.data.objects[self.curve]
 
                         bpy.data.objects[self.og_obj].parent = bpy.data.objects[self.inst_obj]
                         bpy.data.objects[self.og_obj].matrix_parent_inverse = bpy.data.objects[self.inst_obj].matrix_world.inverted()
@@ -4456,7 +6740,7 @@ class EmcArrayModal(bpy.types.Operator):
                             bpy.ops.object.modifier_add(type='CURVE')
                             bpy.context.object.modifiers[self.mod_index].fit_type = 'FIT_CURVE'
                             bpy.context.object.modifiers[self.mod_index].curve = bpy.data.objects[self.curve]
-                            bpy.context.object.modifiers[-1].object = bpy.data.objects[self.curve]
+                            bpy.context.object.modifiers[bottom_mod()].object = bpy.data.objects[self.curve]
                 else:
                     self.report({"WARNING"}, "Instancing cannot be enabled if circular array is active. Activate instancing before circular array")
 
@@ -4532,10 +6816,10 @@ class EmcArrayModal(bpy.types.Operator):
                             try:
                                 bpy.ops.object.modifier_move_up(modifier=bpy.context.object.modifiers[self.mod_index].name)
                             except:
-                                bpy.ops.object.modifier_move_to_index(modifier=bpy.context.object.modifiers[self.mod_index].name, index=self.mod_index - 1)
+                                bpy.ops.object.modifier_move_to_index(modifier=bpy.context.object.modifiers[self.mod_index].name, index=self.curve_mod_index)
 
-                            bpy.context.object.modifiers[self.mod_index - 1].show_in_editmode = True
-                            bpy.context.object.modifiers[self.mod_index - 1].direction = 'X'
+                            bpy.context.object.modifiers[self.curve_mod_index].show_in_editmode = True
+                            bpy.context.object.modifiers[self.curve_mod_index].direction = 'X'
 
                         except:
                             self.report({"WARNING"}, "Can't add displace modifier")
@@ -4544,7 +6828,7 @@ class EmcArrayModal(bpy.types.Operator):
                         self.add_circle = False
                     else:
                         if not self.init:
-                            bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[self.mod_index - 1].name)
+                            bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[self.curve_mod_index].name)
                             
                             bpy.ops.object.select_all(action='DESELECT')
                             bpy.data.objects[self.obj_offset].select_set(True)
@@ -4568,13 +6852,14 @@ class EmcArrayModal(bpy.types.Operator):
             displace = (self.temp_norm + (delta - self.current_mouse_x)) * -0.005
             if not self.add_circle and not self.init:
                 try:
-                    bpy.context.object.modifiers[self.mod_index - 1].strength = strength
+                    bpy.context.object.modifiers[self.curve_mod_index].strength = strength
                 except:
                     self.report({"WARNING"}, "Displacement modifier not found")
             else:
                 if self.instance and self.axis_name == 'Z' and self.add_circle:
                     bpy.context.object.modifiers[self.mod_index].constant_offset_displace[self.axis_num] = displace
                 else:
+                    print(self.mod_index)
                     bpy.context.object.modifiers[self.mod_index].relative_offset_displace[self.axis_num] = displace
         
         elif event.type == 'WHEELUPMOUSE':
@@ -4601,14 +6886,14 @@ class EmcArrayModal(bpy.types.Operator):
                 bpy.context.object.modifiers[self.mod_index].relative_offset_displace[2] = 0
                 try:
                     if not self.add_circle:
-                        bpy.context.object.modifiers[self.mod_index - 1].direction = 'X'
+                        bpy.context.object.modifiers[self.curve_mod_index].direction = 'X'
                 except:
                     pass
                 try:
                     if event.shift:
-                        bpy.context.object.modifiers[-1].deform_axis = 'NEG_X'
+                        bpy.context.object.modifiers[bottom_mod()].deform_axis = 'NEG_X'
                     else:
-                        bpy.context.object.modifiers[-1].deform_axis = 'POS_X'
+                        bpy.context.object.modifiers[bottom_mod()].deform_axis = 'POS_X'
                 except:
                     pass
 
@@ -4622,14 +6907,14 @@ class EmcArrayModal(bpy.types.Operator):
                 bpy.context.object.modifiers[self.mod_index].relative_offset_displace[2] = 0
                 try:
                     if not self.add_circle:
-                        bpy.context.object.modifiers[self.mod_index - 1].direction = 'Y'
+                        bpy.context.object.modifiers[self.curve_mod_index].direction = 'Y'
                 except:
                     pass
                 try:
                     if event.shift:
-                        bpy.context.object.modifiers[-1].deform_axis = 'NEG_Y'
+                        bpy.context.object.modifiers[bottom_mod()].deform_axis = 'NEG_Y'
                     else:
-                        bpy.context.object.modifiers[-1].deform_axis = 'POS_Y'
+                        bpy.context.object.modifiers[bottom_mod()].deform_axis = 'POS_Y'
                 except:
                     pass
 
@@ -4648,14 +6933,14 @@ class EmcArrayModal(bpy.types.Operator):
                 
                 try:
                     if not self.add_circle:
-                        bpy.context.object.modifiers[self.mod_index - 1].direction = 'Z'
+                        bpy.context.object.modifiers[self.curve_mod_index].direction = 'Z'
                 except:
                     pass
                 try:
                     if event.shift:
-                        bpy.context.object.modifiers[-1].deform_axis = 'NEG_Z'
+                        bpy.context.object.modifiers[bottom_mod()].deform_axis = 'NEG_Z'
                     else:
-                        bpy.context.object.modifiers[-1].deform_axis = 'POS_Z'
+                        bpy.context.object.modifiers[bottom_mod()].deform_axis = 'POS_Z'
                 except:
                     pass
 
@@ -4668,14 +6953,16 @@ class EmcArrayModal(bpy.types.Operator):
                 if len(bpy.context.selected_objects) == 2 and bpy.data.objects[self.curve].type == 'CURVE':
                     if self.add_deform == True:
                         self.add_deform = False
-                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
-                        self.mod_index += 1
+                        bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[bottom_mod()].name)
+                        if int_version < 420:
+                            self.mod_index += 1
                     else:
                         self.add_deform = True
                     if self.add_deform:
                             bpy.ops.object.modifier_add(type='CURVE')
-                            bpy.context.object.modifiers[-1].object = bpy.data.objects[self.curve]
-                            self.mod_index -= 1
+                            bpy.context.object.modifiers[bottom_mod()].object = bpy.data.objects[self.curve]
+                            if int_version < 420:
+                                self.mod_index -= 1
                             try:
                                 bpy.data.window_managers["WinMan"].ml_active_object_modifier_active_index = self.mod_index
                             except:
@@ -4731,18 +7018,18 @@ class EmcArrayModal(bpy.types.Operator):
             bpy.context.object.modifiers[self.mod_index].relative_offset_displace[0] = self.x_factor
             bpy.context.object.modifiers[self.mod_index].relative_offset_displace[1] = self.y_factor
             bpy.context.object.modifiers[self.mod_index].relative_offset_displace[2] = self.z_factor
-            bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+            bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[bottom_mod()].name)
             if not self.add_circle:
                 if self.instance:
                     pass
                 else:
-                    bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+                    bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[bottom_mod()].name)
                 bpy.ops.object.select_all(action='DESELECT')
                 set_obj_selection(self.obj_offset)
                 bpy.ops.object.delete()
                 set_obj_selection(self.og_obj)
             if self.add_deform:
-                bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+                bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[bottom_mod()].name)
             context.area.header_text_set(None)
             bpy.types.WorkSpace.status_text_set_internal(None)
             bpy.ops.object.mode_set (mode =self.og_mode)
@@ -4756,7 +7043,7 @@ class EmcArrayModal(bpy.types.Operator):
             if self.add_deform:
                 srngt = round(bpy.context.object.modifiers[self.mod_index].relative_offset_displace[self.axis_num], 2)
             else:
-                srngt = round(bpy.context.object.modifiers[self.mod_index].relative_offset_displace[self.axis_num], 2) if self.add_circle else round(bpy.context.object.modifiers[self.mod_index - 1].strength, 2)
+                srngt = round(bpy.context.object.modifiers[self.mod_index].relative_offset_displace[self.axis_num], 2) if self.add_circle else round(bpy.context.object.modifiers[self.curve_mod_index].strength, 2)
             context.area.header_text_set(
                 "Strength: " + str(srngt) + " | " + 
                 "Count: " + str(bpy.context.object.modifiers[self.mod_index].count) + " | " + 
@@ -4781,13 +7068,14 @@ class EmcArrayModal(bpy.types.Operator):
         self.axis_name = 'X'
         self.og_mode = bpy.context.object.mode
         self.wires = bpy.context.object.show_wire
-        self.mod_index = -1
         self.instance = False
         self.og_obj = bpy.context.active_object.name
 
         bpy.ops.object.mode_set (mode = 'OBJECT')
 
         bpy.ops.object.modifier_add(type='ARRAY')
+        self.mod_index = bottom_mod(True)
+        self.curve_mod_index = self.mod_index + 1 if int_version >= 420 else self.mod_index - 1
 
         if len(bpy.context.selected_objects) == 2:
             active, curve = get_obj_selection()
@@ -4877,69 +7165,69 @@ class EmcScrewModal(bpy.types.Operator):
             steps = (self.temp_norm + (delta - self.current_mouse_x)) * -0.05
 
             if event.ctrl:
-                bpy.context.object.modifiers[-1].screw_offset = screw
+                bpy.context.object.modifiers[bottom_mod()].screw_offset = screw
                 # print(self.temp_ctrl + (delta - self.current_mouse_x) -500)
 
             elif event.alt:
-                bpy.context.object.modifiers[-1].angle = angle
+                bpy.context.object.modifiers[bottom_mod()].angle = angle
                 # print(self.temp_ctrl + (delta - self.current_mouse_x))
 
             else:
                 if self.init == True:
-                    bpy.context.object.modifiers[-1].steps = 16
-                    bpy.context.object.modifiers[-1].render_steps = 16
-                    bpy.context.object.modifiers[-1].screw_offset = 0
+                    bpy.context.object.modifiers[bottom_mod()].steps = 16
+                    bpy.context.object.modifiers[bottom_mod()].render_steps = 16
+                    bpy.context.object.modifiers[bottom_mod()].screw_offset = 0
                     self.init = False
                     
-                bpy.context.object.modifiers[-1].steps = int(steps)
-                bpy.context.object.modifiers[-1].render_steps = int(steps)
+                bpy.context.object.modifiers[bottom_mod()].steps = int(steps)
+                bpy.context.object.modifiers[bottom_mod()].render_steps = int(steps)
                 # print(self.temp_norm + (delta - self.current_mouse_x))
             
         if event.type == 'WHEELUPMOUSE':
-            bpy.context.object.modifiers[-1].iterations += 1
+            bpy.context.object.modifiers[bottom_mod()].iterations += 1
 
         elif event.type == 'PAGE_UP':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].iterations += 1
+                bpy.context.object.modifiers[bottom_mod()].iterations += 1
 
         if event.type == 'WHEELDOWNMOUSE':
-            bpy.context.object.modifiers[-1].iterations -= 1
+            bpy.context.object.modifiers[bottom_mod()].iterations -= 1
 
         elif event.type == 'PAGE_DOWN':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].iterations -= 1
+                bpy.context.object.modifiers[bottom_mod()].iterations -= 1
 
         elif event.type == 'S':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].use_smooth_shade = not bpy.context.object.modifiers[-1].use_smooth_shade
+                bpy.context.object.modifiers[bottom_mod()].use_smooth_shade = not bpy.context.object.modifiers[bottom_mod()].use_smooth_shade
             
         elif event.type == 'M':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].use_merge_vertices = not bpy.context.object.modifiers[-1].use_merge_vertices
+                bpy.context.object.modifiers[bottom_mod()].use_merge_vertices = not bpy.context.object.modifiers[bottom_mod()].use_merge_vertices
         
         elif event.type == 'C':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].use_normal_calculate = not bpy.context.object.modifiers[-1].use_normal_calculate
+                bpy.context.object.modifiers[bottom_mod()].use_normal_calculate = not bpy.context.object.modifiers[bottom_mod()].use_normal_calculate
             
         elif event.type == 'F':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].use_normal_flip = not bpy.context.object.modifiers[-1].use_normal_flip
+                bpy.context.object.modifiers[bottom_mod()].use_normal_flip = not bpy.context.object.modifiers[bottom_mod()].use_normal_flip
 
         elif event.type == 'X':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].axis = 'X'
+                bpy.context.object.modifiers[bottom_mod()].axis = 'X'
             
         elif event.type == 'Y':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].axis = 'Y'
+                bpy.context.object.modifiers[bottom_mod()].axis = 'Y'
         
         elif event.type == 'Z':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].axis = 'Z'
+                bpy.context.object.modifiers[bottom_mod()].axis = 'Z'
 
         elif event.type == 'NUMPAD_0' or event.type == 'ZERO':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].angle = 0
+                bpy.context.object.modifiers[bottom_mod()].angle = 0
 
         elif event.type == 'Q':
             if event.value == 'PRESS':
@@ -4958,7 +7246,7 @@ class EmcScrewModal(bpy.types.Operator):
             return {'FINISHED'}
 
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
-            bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+            bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[bottom_mod()].name)
             if self.edit == True:
                 bpy.ops.object.mode_set(mode='EDIT')
             context.area.header_text_set(None)
@@ -4967,12 +7255,12 @@ class EmcScrewModal(bpy.types.Operator):
             return {'CANCELLED'}
         try:
             context.area.header_text_set(
-                "Steps: " + str(bpy.context.object.modifiers[-1].steps) + " | " + 
-                "Angle: " + str(round(bpy.context.object.modifiers[-1].angle*180/math.pi, 3)) + " | " + 
-                "Screw: "  + str(round(bpy.context.object.modifiers[-1].screw_offset, 2)) + " | " + 
-                "Calc Order: " + str(bpy.context.object.modifiers[-1].use_normal_calculate) + " | " + 
-                "Flip: " + str(bpy.context.object.modifiers[-1].use_normal_flip) + " | " + 
-                "Merge: " + str(bpy.context.object.modifiers[-1].use_merge_vertices)
+                "Steps: " + str(bpy.context.object.modifiers[bottom_mod()].steps) + " | " + 
+                "Angle: " + str(round(bpy.context.object.modifiers[bottom_mod()].angle*180/math.pi, 3)) + " | " + 
+                "Screw: "  + str(round(bpy.context.object.modifiers[bottom_mod()].screw_offset, 2)) + " | " + 
+                "Calc Order: " + str(bpy.context.object.modifiers[bottom_mod()].use_normal_calculate) + " | " + 
+                "Flip: " + str(bpy.context.object.modifiers[bottom_mod()].use_normal_flip) + " | " + 
+                "Merge: " + str(bpy.context.object.modifiers[bottom_mod()].use_merge_vertices)
             )
             bpy.types.WorkSpace.status_text_set_internal("MMB Scroll/ Page U/D: Iterations | Ctrl: Screw | Alt: Angle | C: Calc Order | F: Flip | X/Y/Z: Axis | S: Smooth Shading | M: Merge Vertices | 0: Set Angle to 0d | Q: Toggle Wireframe")
         except:
@@ -4998,9 +7286,9 @@ class EmcScrewModal(bpy.types.Operator):
             self.edit = False
 
         bpy.ops.object.modifier_add(type='SCREW')
-        bpy.context.object.modifiers[-1].use_merge_vertices = True
+        bpy.context.object.modifiers[bottom_mod()].use_merge_vertices = True
 
-        my_name = bpy.context.object.modifiers[-1].name
+        my_name = bpy.context.object.modifiers[bottom_mod()].name
         my_mod = 'modifiers["{}"].steps'.format(my_name)
         create_driver(my_name, 'render_steps', 'var', my_mod)
             
@@ -5009,9 +7297,9 @@ class EmcScrewModal(bpy.types.Operator):
         except:
             pass  
 
-        self.screw = bpy.context.object.modifiers[-1].screw_offset
-        self.angle = int(bpy.context.object.modifiers[-1].angle)
-        self.steps = int(bpy.context.object.modifiers[-1].steps)
+        self.screw = bpy.context.object.modifiers[bottom_mod()].screw_offset
+        self.angle = int(bpy.context.object.modifiers[bottom_mod()].angle)
+        self.steps = int(bpy.context.object.modifiers[bottom_mod()].steps)
 
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
@@ -5040,7 +7328,7 @@ class EmcDeformModal(bpy.types.Operator):
             angle = (delta - self.current_mouse_x) * -0.01
 
             if self.init == True:
-                bpy.context.object.modifiers[-1].angle = 0
+                bpy.context.object.modifiers[bottom_mod()].angle = 0
                 self.init = False
 
             if angle < -2 * math.pi:
@@ -5050,28 +7338,28 @@ class EmcDeformModal(bpy.types.Operator):
             else:
                 number = angle
                 
-            bpy.context.object.modifiers[-1].angle = number
-            bpy.context.object.modifiers[-1].factor = number
+            bpy.context.object.modifiers[bottom_mod()].angle = number
+            bpy.context.object.modifiers[bottom_mod()].factor = number
             # print(self.temp_norm + (delta - self.current_mouse_x))        
             
         elif event.type == 'T':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].deform_method = 'TWIST'
+                bpy.context.object.modifiers[bottom_mod()].deform_method = 'TWIST'
                 self.myType = "Angle: "
             
         elif event.type == 'B':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].deform_method = 'BEND'
+                bpy.context.object.modifiers[bottom_mod()].deform_method = 'BEND'
                 self.myType = "Angle: "
         
         elif event.type == 'A':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].deform_method = 'TAPER'
+                bpy.context.object.modifiers[bottom_mod()].deform_method = 'TAPER'
                 self.myType = "Factor: "
             
         elif event.type == 'S':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].deform_method = 'STRETCH'
+                bpy.context.object.modifiers[bottom_mod()].deform_method = 'STRETCH'
                 self.myType = "Factor: "
 
         elif event.type == 'Q':
@@ -5080,21 +7368,21 @@ class EmcDeformModal(bpy.types.Operator):
         
         elif event.type == 'X':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].deform_axis = 'X'
+                bpy.context.object.modifiers[bottom_mod()].deform_axis = 'X'
             if event.shift:
-                bpy.context.object.modifiers[-1].lock_x = not bpy.context.object.modifiers[-1].lock_x
+                bpy.context.object.modifiers[bottom_mod()].lock_x = not bpy.context.object.modifiers[bottom_mod()].lock_x
             
         elif event.type == 'Y':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].deform_axis = 'Y'
+                bpy.context.object.modifiers[bottom_mod()].deform_axis = 'Y'
             if event.shift:
-                bpy.context.object.modifiers[-1].lock_y = not bpy.context.object.modifiers[-1].lock_y
+                bpy.context.object.modifiers[bottom_mod()].lock_y = not bpy.context.object.modifiers[bottom_mod()].lock_y
         
         elif event.type == 'Z':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].deform_axis = 'Z'
+                bpy.context.object.modifiers[bottom_mod()].deform_axis = 'Z'
             if event.shift:
-                bpy.context.object.modifiers[-1].lock_z = not bpy.context.object.modifiers[-1].lock_z
+                bpy.context.object.modifiers[bottom_mod()].lock_z = not bpy.context.object.modifiers[bottom_mod()].lock_z
 
 
         elif event.type in {'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
@@ -5109,7 +7397,7 @@ class EmcDeformModal(bpy.types.Operator):
             return {'FINISHED'}
 
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
-            bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+            bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[bottom_mod()].name)
             if self.edit == True:
                 bpy.ops.object.mode_set(mode='EDIT')
             context.area.header_text_set(None)
@@ -5128,9 +7416,9 @@ class EmcDeformModal(bpy.types.Operator):
 
         try:
             context.area.header_text_set(
-                self.myType + str(round(bpy.context.object.modifiers[-1].angle*180/math.pi, 3)) + " | " + 
-                "Axis: "  + bpy.context.object.modifiers[-1].deform_axis + " | " + 
-                "Deform Method: "  + bpy.context.object.modifiers[-1].deform_method
+                self.myType + str(round(bpy.context.object.modifiers[bottom_mod()].angle*180/math.pi, 3)) + " | " + 
+                "Axis: "  + bpy.context.object.modifiers[bottom_mod()].deform_axis + " | " + 
+                "Deform Method: "  + bpy.context.object.modifiers[bottom_mod()].deform_method
             )
             bpy.types.WorkSpace.status_text_set_internal("X/Y/Z: Axis | Shift + Axis: Lock Axis | T/B/A/S: Deform Method | Q: Toggle Wireframe")
         except:
@@ -5171,9 +7459,9 @@ class EmcDeformModal(bpy.types.Operator):
         set_obj_selection(active)
 
         bpy.ops.object.modifier_add(type='SIMPLE_DEFORM')
-        bpy.context.object.modifiers[-1].deform_method = 'BEND'
-        bpy.context.object.modifiers[-1].origin = origin
-        bpy.context.object.modifiers[-1].deform_axis = 'Z'
+        bpy.context.object.modifiers[bottom_mod()].deform_method = 'BEND'
+        bpy.context.object.modifiers[bottom_mod()].origin = origin
+        bpy.context.object.modifiers[bottom_mod()].deform_axis = 'Z'
 
         move_to_col(origin, "EMC Extras", True, True)
             
@@ -5182,7 +7470,7 @@ class EmcDeformModal(bpy.types.Operator):
         except:
             pass  
 
-        self.angle = bpy.context.object.modifiers[-1].angle
+        self.angle = bpy.context.object.modifiers[bottom_mod()].angle
 
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
@@ -5230,30 +7518,30 @@ class EmcSolidifyModal(bpy.types.Operator):
                 used_offset = offset
 
             if event.ctrl:
-                bpy.context.object.modifiers[-1].offset = used_offset
+                bpy.context.object.modifiers[bottom_mod()].offset = used_offset
 
             else:
-                bpy.context.object.modifiers[-1].thickness = thickness
+                bpy.context.object.modifiers[bottom_mod()].thickness = thickness
 
         elif event.type == 'E':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].use_even_offset = not bpy.context.object.modifiers[-1].use_even_offset
+                bpy.context.object.modifiers[bottom_mod()].use_even_offset = not bpy.context.object.modifiers[bottom_mod()].use_even_offset
             
         elif event.type == 'H':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].use_quality_normals = not bpy.context.object.modifiers[-1].use_quality_normals
+                bpy.context.object.modifiers[bottom_mod()].use_quality_normals = not bpy.context.object.modifiers[bottom_mod()].use_quality_normals
         
         elif event.type == 'R':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].use_rim = not bpy.context.object.modifiers[-1].use_rim
+                bpy.context.object.modifiers[bottom_mod()].use_rim = not bpy.context.object.modifiers[bottom_mod()].use_rim
 
         elif event.type == 'O':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].use_rim_only = not bpy.context.object.modifiers[-1].use_rim_only
+                bpy.context.object.modifiers[bottom_mod()].use_rim_only = not bpy.context.object.modifiers[bottom_mod()].use_rim_only
             
         elif event.type == 'F':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].use_flip_normals = not bpy.context.object.modifiers[-1].use_flip_normals
+                bpy.context.object.modifiers[bottom_mod()].use_flip_normals = not bpy.context.object.modifiers[bottom_mod()].use_flip_normals
 
         elif event.type == 'Q':
             if event.value == 'PRESS':
@@ -5272,7 +7560,7 @@ class EmcSolidifyModal(bpy.types.Operator):
             return {'FINISHED'}
 
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
-            bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+            bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[bottom_mod()].name)
             if self.edit == True:
                 bpy.ops.object.vertex_group_remove(all=False, all_unlocked=False)
                 bpy.ops.object.mode_set(mode='EDIT')
@@ -5282,13 +7570,13 @@ class EmcSolidifyModal(bpy.types.Operator):
             return {'CANCELLED'}
         
         context.area.header_text_set(
-            "Thickness: " + str(round(bpy.context.object.modifiers[-1].thickness, 2)) + " | " + 
-            "Offset: " + str(round(bpy.context.object.modifiers[-1].offset, 2)) + " | " + 
-            "Flip Normals: "  + str(bpy.context.object.modifiers[-1].use_flip_normals) + " | " + 
-            "Even Thickness: " + str(bpy.context.object.modifiers[-1].use_even_offset) + " | " + 
-            "High Quality Normals: " + str(bpy.context.object.modifiers[-1].use_quality_normals) + " | " + 
-            "Fill Rim: " + str(bpy.context.object.modifiers[-1].use_rim) + " | " + 
-            "Only Rim: " + str(bpy.context.object.modifiers[-1].use_rim_only)
+            "Thickness: " + str(round(bpy.context.object.modifiers[bottom_mod()].thickness, 2)) + " | " + 
+            "Offset: " + str(round(bpy.context.object.modifiers[bottom_mod()].offset, 2)) + " | " + 
+            "Flip Normals: "  + str(bpy.context.object.modifiers[bottom_mod()].use_flip_normals) + " | " + 
+            "Even Thickness: " + str(bpy.context.object.modifiers[bottom_mod()].use_even_offset) + " | " + 
+            "High Quality Normals: " + str(bpy.context.object.modifiers[bottom_mod()].use_quality_normals) + " | " + 
+            "Fill Rim: " + str(bpy.context.object.modifiers[bottom_mod()].use_rim) + " | " + 
+            "Only Rim: " + str(bpy.context.object.modifiers[bottom_mod()].use_rim_only)
         )
         bpy.types.WorkSpace.status_text_set_internal("Ctrl: Offset | F: Flip Normals | E: Even Thickness | H: High Quality Normals | R: Fill Rim | O: Only Rim | Q: Toggle Wireframe")
         return {'RUNNING_MODAL'}
@@ -5301,15 +7589,15 @@ class EmcSolidifyModal(bpy.types.Operator):
         bpy.context.object.show_wire = True
 
         bpy.ops.object.modifier_add(type='SOLIDIFY')
-        bpy.context.object.modifiers[-1].offset = 1
+        bpy.context.object.modifiers[bottom_mod()].offset = 1
 
         if bpy.context.object.mode == 'EDIT':
             bpy.ops.object.vertex_group_add()
             bpy.context.scene.tool_settings.vertex_group_weight = 1
             bpy.ops.object.vertex_group_assign()
             bpy.context.object.vertex_groups[-1].name = 'EMC Solidify'
-            bpy.context.object.modifiers[-1].vertex_group = bpy.context.object.vertex_groups[-1].name
-            bpy.context.object.modifiers[-1].thickness_vertex_group = 0.001
+            bpy.context.object.modifiers[bottom_mod()].vertex_group = bpy.context.object.vertex_groups[-1].name
+            bpy.context.object.modifiers[bottom_mod()].thickness_vertex_group = 0.001
             bpy.ops.object.mode_set(mode='OBJECT')
             self.edit = True
         else:
@@ -5320,8 +7608,8 @@ class EmcSolidifyModal(bpy.types.Operator):
         except:
             pass  
 
-        self.screw = bpy.context.object.modifiers[-1].thickness
-        self.angle = bpy.context.object.modifiers[-1].offset
+        self.screw = bpy.context.object.modifiers[bottom_mod()].thickness
+        self.angle = bpy.context.object.modifiers[bottom_mod()].offset
 
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
@@ -5364,16 +7652,23 @@ class EmcWeightedNormals(bpy.types.Operator):
                     bpy.ops.object.mode_set(mode='EDIT')
 
                 bpy.ops.object.modifier_add(type='WEIGHTED_NORMAL')
-                obj.modifiers[-1].keep_sharp = sharp
-                obj.modifiers[-1].mode = mode
-                obj.modifiers[-1].show_expanded = False
-                obj.modifiers[-1].keep_sharp = self.sharp
+                obj.modifiers["WeightedNormal"].keep_sharp = sharp
+                obj.modifiers["WeightedNormal"].mode = mode
+                obj.modifiers["WeightedNormal"].show_expanded = False
+                obj.modifiers["WeightedNormal"].keep_sharp = self.sharp
 
             else:
-                bpy.ops.object.modifier_move_to_index(modifier=og_mod, index=len(bpy.context.active_object.modifiers)-1)
+                if int_version < 420:
+                    bpy.ops.object.modifier_move_to_index(modifier=og_mod, index=len(bpy.context.active_object.modifiers)-1)
+                else:
+                    pass
         
-        for obj in og:
-            obj.data.use_auto_smooth = True
+            if int_version < 420:
+                obj.data.use_auto_smooth = True
+            else:
+                bpy.ops.object.shade_auto_smooth()
+                obj.modifiers["WeightedNormal"].use_pin_to_last = True
+
         set_obj_selection(active, og)
 
         return{'FINISHED'}
@@ -5398,23 +7693,23 @@ class EmcDisplaceModal(bpy.types.Operator):
             delta = self.first_mouse_x - event.mouse_x
             strength = (self.temp_norm + (delta - self.current_mouse_x)) * -0.02
 
-            bpy.context.object.modifiers[-1].strength = strength
+            bpy.context.object.modifiers[bottom_mod()].strength = strength
 
         elif event.type == 'X':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].direction = 'X'
+                bpy.context.object.modifiers[bottom_mod()].direction = 'X'
             
         elif event.type == 'Y':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].direction = 'Y'
+                bpy.context.object.modifiers[bottom_mod()].direction = 'Y'
         
         elif event.type == 'Z':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].direction = 'Z'
+                bpy.context.object.modifiers[bottom_mod()].direction = 'Z'
 
         elif event.type == 'N':
             if event.value == 'PRESS':
-                bpy.context.object.modifiers[-1].direction = 'NORMAL'
+                bpy.context.object.modifiers[bottom_mod()].direction = 'NORMAL'
             
         elif event.type == 'Q':
             if event.value == 'PRESS':
@@ -5422,10 +7717,10 @@ class EmcDisplaceModal(bpy.types.Operator):
 
         elif event.type == 'S':
             if event.value == 'PRESS':
-                if bpy.context.object.modifiers[-1].space == 'GLOBAL':
-                    bpy.context.object.modifiers[-1].space = 'LOCAL'
+                if bpy.context.object.modifiers[bottom_mod()].space == 'GLOBAL':
+                    bpy.context.object.modifiers[bottom_mod()].space = 'LOCAL'
                 else:
-                    bpy.context.object.modifiers[-1].space = 'GLOBAL'
+                    bpy.context.object.modifiers[bottom_mod()].space = 'GLOBAL'
 
 
         elif event.type in {'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
@@ -5440,7 +7735,7 @@ class EmcDisplaceModal(bpy.types.Operator):
             return {'FINISHED'}
 
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
-            bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[-1].name)
+            bpy.ops.object.modifier_remove(modifier=bpy.context.object.modifiers[bottom_mod()].name)
             if self.edit == True:
                 bpy.ops.object.mode_set(mode='EDIT')
             if self.v_group == True:
@@ -5451,9 +7746,9 @@ class EmcDisplaceModal(bpy.types.Operator):
             return {'CANCELLED'}
         
         context.area.header_text_set(
-            "Strength: " + str(round(bpy.context.object.modifiers[-1].strength, 2)) + " | " + 
-            "Direction: " + str(bpy.context.object.modifiers[-1].direction) + " | " + 
-            "Space: "  + str(bpy.context.object.modifiers[-1].space)
+            "Strength: " + str(round(bpy.context.object.modifiers[bottom_mod()].strength, 2)) + " | " + 
+            "Direction: " + str(bpy.context.object.modifiers[bottom_mod()].direction) + " | " + 
+            "Space: "  + str(bpy.context.object.modifiers[bottom_mod()].space)
         )
         bpy.types.WorkSpace.status_text_set_internal("X/Y/Z/N: Direction | S: Space | Q: Toggle Wireframe")
         return {'RUNNING_MODAL'}
@@ -5465,7 +7760,7 @@ class EmcDisplaceModal(bpy.types.Operator):
         self.v_group = False
 
         bpy.ops.object.modifier_add(type='DISPLACE')
-        bpy.context.object.modifiers[-1].direction = 'X'
+        bpy.context.object.modifiers[bottom_mod()].direction = 'X'
 
         if bpy.context.object.mode == 'EDIT':
             bm = bmesh.from_edit_mesh(context.edit_object.data)
@@ -5475,9 +7770,9 @@ class EmcDisplaceModal(bpy.types.Operator):
                 bpy.context.scene.tool_settings.vertex_group_weight = 1
                 bpy.ops.object.vertex_group_assign()
                 bpy.context.object.vertex_groups[-1].name = 'EMC Displace'
-                bpy.context.object.modifiers[-1].vertex_group = bpy.context.object.vertex_groups[-1].name
-                bpy.context.object.modifiers[-1].show_in_editmode = True
-                bpy.context.object.modifiers[-1].show_on_cage = True
+                bpy.context.object.modifiers[bottom_mod()].vertex_group = bpy.context.object.vertex_groups[-1].name
+                bpy.context.object.modifiers[bottom_mod()].show_in_editmode = True
+                bpy.context.object.modifiers[bottom_mod()].show_on_cage = True
 
                 self.v_group = True
             bpy.ops.object.mode_set(mode='OBJECT')
@@ -5490,7 +7785,7 @@ class EmcDisplaceModal(bpy.types.Operator):
         except:
             pass  
 
-        self.strength = bpy.context.object.modifiers[-1].strength
+        self.strength = bpy.context.object.modifiers[bottom_mod()].strength
 
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
@@ -5793,39 +8088,39 @@ class PanelLines(bpy.types.Operator):
         bpy.context.object.vertex_groups[-1].name = 'EMC Panel Lines'
 
         bpy.ops.object.modifier_add(type='BEVEL')
-        bpy.context.object.modifiers[-1].width = 0.0005
-        bpy.context.object.modifiers[-1].segments = 2
-        bpy.context.object.modifiers[-1].profile = 1
-        bpy.context.object.modifiers[-1].limit_method = 'VGROUP'
-        bpy.context.object.modifiers[-1].vertex_group = bpy.context.object.vertex_groups[-1].name
+        bpy.context.object.modifiers[bottom_mod()].width = 0.0005
+        bpy.context.object.modifiers[bottom_mod()].segments = 2
+        bpy.context.object.modifiers[bottom_mod()].profile = 1
+        bpy.context.object.modifiers[bottom_mod()].limit_method = 'VGROUP'
+        bpy.context.object.modifiers[bottom_mod()].vertex_group = bpy.context.object.vertex_groups[-1].name
 
         bpy.ops.emc.addmod(modifier='VERTEX_WEIGHT_EDIT')
-        bpy.context.object.modifiers[-1].show_in_editmode = True
-        bpy.context.object.modifiers[-1].show_expanded = False
+        bpy.context.object.modifiers[bottom_mod()].show_in_editmode = True
+        bpy.context.object.modifiers[bottom_mod()].show_expanded = False
 
         bpy.ops.object.modifier_add(type='MASK')
-        bpy.context.object.modifiers[-1].vertex_group = bpy.context.object.vertex_groups[-1].name
-        bpy.context.object.modifiers[-1].invert_vertex_group = True
-        bpy.context.object.modifiers[-1].show_in_editmode = True
-        bpy.context.object.modifiers[-1].show_expanded = False
+        bpy.context.object.modifiers[bottom_mod()].vertex_group = bpy.context.object.vertex_groups[-1].name
+        bpy.context.object.modifiers[bottom_mod()].invert_vertex_group = True
+        bpy.context.object.modifiers[bottom_mod()].show_in_editmode = True
+        bpy.context.object.modifiers[bottom_mod()].show_expanded = False
 
         bpy.ops.object.modifier_add(type='SOLIDIFY')
-        bpy.context.object.modifiers[-1].use_rim_only = True
-        bpy.context.object.modifiers[-1].thickness = 0.01
+        bpy.context.object.modifiers[bottom_mod()].use_rim_only = True
+        bpy.context.object.modifiers[bottom_mod()].thickness = 0.01
 
         bpy.ops.object.modifier_add(type='BEVEL')
-        bpy.context.object.modifiers[-1].segments = 4
-        bpy.context.object.modifiers[-1].profile = 0.5
-        bpy.context.object.modifiers[-1].limit_method = 'ANGLE'
-        bpy.context.object.modifiers[-1].angle_limit = 1.53589
-        bpy.context.object.modifiers[-1].miter_outer = 'MITER_ARC'
-        bpy.context.object.modifiers[-1].use_clamp_overlap = False
-        bpy.context.object.modifiers[-1].width = 0.005
+        bpy.context.object.modifiers[bottom_mod()].segments = 4
+        bpy.context.object.modifiers[bottom_mod()].profile = 0.5
+        bpy.context.object.modifiers[bottom_mod()].limit_method = 'ANGLE'
+        bpy.context.object.modifiers[bottom_mod()].angle_limit = 1.53589
+        bpy.context.object.modifiers[bottom_mod()].miter_outer = 'MITER_ARC'
+        bpy.context.object.modifiers[bottom_mod()].use_clamp_overlap = False
+        bpy.context.object.modifiers[bottom_mod()].width = 0.005
 
         bpy.ops.emc.weightmod()
 
         bpy.ops.emc.addmod(modifier='TRIANGULATE')
-        bpy.context.object.modifiers[-1].show_expanded = False
+        bpy.context.object.modifiers[bottom_mod()].show_expanded = False
 
         return{'FINISHED'}
 
@@ -6029,14 +8324,88 @@ class ViewGroup(bpy.types.Operator):
             bpy.ops.object.mode_set(mode='OBJECT')
 
         bpy.ops.object.modifier_add(type='NODES')
-        bpy.context.active_object.modifiers[-1].node_group = bpy.data.node_groups['Vertex Weight Gradient']
-        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_5_use_attribute\"]", modifier_name=bpy.context.active_object.modifiers[-1].name)
-        bpy.context.active_object.modifiers[-1]["Input_5_attribute_name"] = bpy.context.active_object.modifiers[start].vertex_group if self.sel_mod_ver else bpy.context.active_object.vertex_groups[-1].name
-        bpy.context.active_object.modifiers[-1]["Output_8_attribute_name"] = vertex_colors(bpy.context.active_object)[-1].name
+        bpy.context.active_object.modifiers[bottom_mod()].node_group = bpy.data.node_groups['Vertex Weight Gradient']
+        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_5_use_attribute\"]", modifier_name=bpy.context.active_object.modifiers[bottom_mod()].name)
+        bpy.context.active_object.modifiers[bottom_mod()]["Input_5_attribute_name"] = bpy.context.active_object.modifiers[start].vertex_group if self.sel_mod_ver else bpy.context.active_object.vertex_groups[-1].name
+        bpy.context.active_object.modifiers[bottom_mod()]["Output_8_attribute_name"] = vertex_colors(bpy.context.active_object)[-1].name
 
-        bpy.ops.object.modifier_move_to_index(modifier=bpy.context.active_object.modifiers[-1].name, index=start+1)
+        bpy.ops.object.modifier_move_to_index(modifier=bpy.context.active_object.modifiers[bottom_mod()].name, index=start+1)
 
         
+        return{'FINISHED'}
+
+class AddCustomPrimitiveGN(bpy.types.Operator):
+    """Split Faces"""
+    bl_label = "Add Custom Primitive"
+    bl_idname = "emc.gn_primitive"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    name: bpy.props.StringProperty(
+        name = "Name", 
+        description = "Name of Object", 
+        default = "",
+    )
+
+    smooth: bpy.props.BoolProperty(
+        name = "Apply Autosmooth",
+        description = "Add Smooth by Angle Modifier",
+        default = False,
+    )
+
+    rand_col: bpy.props.BoolProperty(
+        name = "Random Color",
+        description = "Give object a random color",
+        default = False,
+        )
+
+    apply: bpy.props.BoolProperty(
+        name = "Apply Modifiers",
+        description = "Create Primitive Non-Destructively if Disabled",
+        default = False,
+    )
+
+    primitive: bpy.props.EnumProperty(
+        name="Primitive",
+        items=(("cube", "Cube", ""),
+               ("cylinder", "Cylinder", ""),
+               ("sphere", "Sphere", ""),
+               ("plane", "Plane", ""),
+               ("cone", "Cone", ""),
+               ("torus", "Torus", ""),
+               ("circle", "Circle", ""),
+               ("pipe", "Pipe", ""),
+               ("helix", "Helix", ""),
+               ("mobius", "Mobius Strip", "")),
+        description="Primitive to Add",
+        default='cube'
+        )
+ 
+    # def draw(self, context):
+    #     layout = self.layout
+    #     layout.prop(self, "methods")
+
+    def execute(self, context):
+        hidden_groups = ["cone", "plane", "sphere"]
+        add_period = "." if self.primitive in hidden_groups else ""
+        capitalized = ' '.join(self.primitive[0].upper() + self.primitive[1:] for self.primitive in self.primitive.split("_"))
+        gn_name = add_period + "EMC " + capitalized
+
+        if not bpy.data.node_groups.get(gn_name):
+            exec(f"gn_{self.primitive}()")
+        
+        bpy.ops.mesh.primitive_monkey_add(align='CURSOR')
+        bpy.context.active_object.modifiers.new(gn_name, "NODES")
+        bpy.context.active_object.modifiers[0].node_group = bpy.data.node_groups[gn_name]
+
+        if self.smooth:
+            bpy.ops.object.shade_auto_smooth()
+            bpy.context.object.modifiers["Smooth by Angle"]["Socket_1"] = True
+
+        bpy.context.active_object.name = self.name if self.name != "" else "EMC " + capitalized
+        if self.rand_col:
+            bpy.context.active_object.color = (random.random(), random.random(), random.random(), 1)
+        if self.apply:
+            bpy.ops.object.convert(target='MESH')
         return{'FINISHED'}
 
 
@@ -6094,8 +8463,8 @@ class AddModifierCustom(bpy.types.Operator):
 
         if self.modifier == "DECIMATE":
             bpy.ops.object.modifier_add(type=self.modifier)
-            bpy.context.object.modifiers[-1].decimate_type = 'DISSOLVE'
-            bpy.context.object.modifiers[-1].angle_limit = 0.0174533
+            bpy.context.object.modifiers[bottom_mod()].decimate_type = 'DISSOLVE'
+            bpy.context.object.modifiers[bottom_mod()].angle_limit = 0.0174533
             
         elif self.modifier == "DATA_TRANSFER":
             gp_obj = "none"
@@ -6139,14 +8508,14 @@ class AddModifierCustom(bpy.types.Operator):
                     bpy.ops.object.select_all(action='DESELECT')
                     set_obj_selection(active)
 
-                    bpy.context.object.modifiers[-1].use_vert_data = True
-                    bpy.context.object.modifiers[-1].data_types_verts = {'VGROUP_WEIGHTS'}
-                    bpy.context.object.modifiers[-1].use_max_distance = True
-                    bpy.context.object.modifiers[-1].max_distance = 0.5
+                    bpy.context.object.modifiers[bottom_mod()].use_vert_data = True
+                    bpy.context.object.modifiers[bottom_mod()].data_types_verts = {'VGROUP_WEIGHTS'}
+                    bpy.context.object.modifiers[bottom_mod()].use_max_distance = True
+                    bpy.context.object.modifiers[bottom_mod()].max_distance = 0.5
 
-                    bpy.context.object.modifiers[-1].object = gp_obj
+                    bpy.context.object.modifiers[bottom_mod()].object = gp_obj
                 else:
-                    bpy.context.object.modifiers[-1].object = objs[0]
+                    bpy.context.object.modifiers[bottom_mod()].object = objs[0]
 
                     if len(objs[0].vertex_groups) == 0:
                         bpy.ops.object.vertex_group_add()
@@ -6167,50 +8536,50 @@ class AddModifierCustom(bpy.types.Operator):
                         bpy.ops.object.select_all(action='DESELECT')
                         set_obj_selection(active)
 
-                        bpy.context.object.modifiers[-1].use_vert_data = True
-                        bpy.context.object.modifiers[-1].data_types_verts = {'VGROUP_WEIGHTS'}
-                        bpy.context.object.modifiers[-1].vert_mapping = 'POLY_NEAREST'
-                        bpy.context.object.modifiers[-1].use_max_distance = True
-                        bpy.context.object.modifiers[-1].max_distance = 0.5
+                        bpy.context.object.modifiers[bottom_mod()].use_vert_data = True
+                        bpy.context.object.modifiers[bottom_mod()].data_types_verts = {'VGROUP_WEIGHTS'}
+                        bpy.context.object.modifiers[bottom_mod()].vert_mapping = 'POLY_NEAREST'
+                        bpy.context.object.modifiers[bottom_mod()].use_max_distance = True
+                        bpy.context.object.modifiers[bottom_mod()].max_distance = 0.5
 
             except:
                 self.report({"INFO"}, "Selected object can be used as target")
 
         elif self.modifier == "SHRINKWRAP":
             bpy.ops.object.modifier_add(type=self.modifier)
-            bpy.context.object.modifiers[-1].wrap_method = 'PROJECT'
-            bpy.context.object.modifiers[-1].use_negative_direction = True
+            bpy.context.object.modifiers[bottom_mod()].wrap_method = 'PROJECT'
+            bpy.context.object.modifiers[bottom_mod()].use_negative_direction = True
             try:
-                bpy.context.object.modifiers[-1].target = objs[0]
+                bpy.context.object.modifiers[bottom_mod()].target = objs[0]
             except:
                 self.report({"INFO"}, "Selected object can be used as target")
 
         elif self.modifier == "MESH_DEFORM":
             bpy.ops.object.modifier_add(type=self.modifier)
-            bpy.ops.object.meshdeform_bind(modifier=bpy.context.object.modifiers[-1].name)
+            bpy.ops.object.meshdeform_bind(modifier=bpy.context.object.modifiers[bottom_mod()].name)
             try:
-                bpy.context.object.modifiers[-1].object = objs[0]
+                bpy.context.object.modifiers[bottom_mod()].object = objs[0]
             except:
                 self.report({"INFO"}, "Selected object can be used as target")
 
         elif self.modifier == "TRIANGULATE":
             bpy.ops.object.modifier_add(type=self.modifier)
-            bpy.context.object.modifiers[-1].keep_custom_normals = True
-            bpy.context.object.modifiers[-1].min_vertices = 5
+            bpy.context.object.modifiers[bottom_mod()].keep_custom_normals = True
+            bpy.context.object.modifiers[bottom_mod()].min_vertices = 5
 
         elif self.modifier == "VERTEX_WEIGHT_EDIT":
             bpy.ops.object.modifier_add(type=self.modifier)
-            bpy.context.object.modifiers[-1].use_remove = True
-            bpy.context.object.modifiers[-1].remove_threshold = 1
+            bpy.context.object.modifiers[bottom_mod()].use_remove = True
+            bpy.context.object.modifiers[bottom_mod()].remove_threshold = 1
             try:
-                bpy.context.object.modifiers[-1].vertex_group = bpy.context.object.vertex_groups[-1].name
+                bpy.context.object.modifiers[bottom_mod()].vertex_group = bpy.context.object.vertex_groups[-1].name
                 self.report({"INFO"}, "Last Vertex Group selected as target")
             except:
                 self.report({"WARNING"}, "No Vertex Groups")
 
         else:
             bpy.ops.object.modifier_add(type='CAST')
-            bpy.context.object.modifiers[-1].factor = 1
+            bpy.context.object.modifiers[bottom_mod()].factor = 1
         return{'FINISHED'}
 
 #-------------------------------------------------------------------
@@ -6512,11 +8881,11 @@ class ToggleSubD(bpy.types.Operator):
         
             if has == False:
                 bpy.ops.object.modifier_add(type='SUBSURF')
-                bpy.context.object.modifiers[-1].levels = 2
-                bpy.context.object.modifiers[-1].show_only_control_edges = False
-                bpy.context.object.modifiers[-1].show_viewport = True if self.showViewport == "on" else False
-                bpy.context.object.modifiers[-1].show_in_editmode = True if self.showViewport == "on" else False
-                bpy.context.object.modifiers[-1].show_on_cage = True if self.showCage == "on" else False
+                bpy.context.object.modifiers[bottom_mod()].levels = 2
+                bpy.context.object.modifiers[bottom_mod()].show_only_control_edges = False
+                bpy.context.object.modifiers[bottom_mod()].show_viewport = True if self.showViewport == "on" else False
+                bpy.context.object.modifiers[bottom_mod()].show_in_editmode = True if self.showViewport == "on" else False
+                bpy.context.object.modifiers[bottom_mod()].show_on_cage = True if self.showCage == "on" else False
 
             if bpy.context.object.mode == 'OBJECT':
                 bpy.ops.object.select_all(action='DESELECT')
@@ -6721,6 +9090,7 @@ classes = (
     ToggleColSpc,
     ToggleOrbit,
     SmartDelete,
+    AddCustomPrimitiveGN
 )
 
 addon_keymaps = []
